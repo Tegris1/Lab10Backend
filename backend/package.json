@@ -1,8 +1,0 @@
-{
-  "scripts": {
-    "dev": "tsx watch src/server.ts"
-  },
-  "dependencies": {
-    "tsx": "^4.23.15"
-  }
-}

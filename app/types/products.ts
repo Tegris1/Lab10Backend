@@ -1,7 +1,14 @@
+export type ProductType = "cpu" | "gpu" | "ram" | "disk";
+export type ProductSort = "nameAsc" | "nameDesc" | "priceAsc" | "priceDesc";
+
 export interface Product {
-  id: string;
+  id: number;
+  code: string;
   name: string;
-  description: string;
+  type: ProductType;
   price: number;
-  stock: number;
+  amount: number;
+  description: string;
+  date: string;
+  image: string;
 }

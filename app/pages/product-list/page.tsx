@@ -26,7 +26,7 @@ export default async function ProductList({
 
       <SortRadio sort={sort} />
       {products.length === 0 ? (
-        <p>No products found.</p>
+        <p>Katalog produktów jest pusty.</p>
       ) : (
         <table>
           <thead>

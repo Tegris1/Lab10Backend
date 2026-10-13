@@ -179,6 +179,17 @@
   letter-spacing: 0.04em;
 }
 
+.product-category-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.category-icon {
+  display: block;
+  flex-shrink: 0;
+}
+
 .product-stock {
   padding: 0.3rem 0.6rem;
   border-radius: 2rem;

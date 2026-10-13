@@ -1,138 +1,165 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sklep z podzespołami komputerowymi
 
-## Getting Started
+Projekt edukacyjny oparty na Next.js i App Routerze. Katalog zawiera 100 przykładowych produktów: CPU, GPU, RAM i dyski. Frontend pobiera dane przez API, filtruje je według kategorii i dostępności oraz pozwala sortować według nazwy lub ceny. Produkty tworzą pionową listę kart z opisem, ikoną, ceną w PLN i stanem magazynowym. Stylowanie wykorzystuje zwykły CSS, bez Tailwind.
 
-First, run the development server:
+Koszyk i historia zamówień mają tylko widoki zastępcze. Aplikacja nie realizuje zakupów.
+
+## Środowisko i dokładne wersje
+
+Wersje sprawdzone 13 października 2026 r. przez `node --version`, `npm --version`, `npm ls --depth=0` i porównanie z `package-lock.json`:
+
+| Narzędzie / pakiet           | Wersja          |
+| ---------------------------- | --------------- | --- |
+|                              |
+| Node.js                      | 24.2.0          |
+| npm                          | 10.9.3          |
+| Next.js                      | 16.3.8          |
+| React / React DOM            | 19.2.8 / 19.2.8 |
+| TypeScript                   | 5.9.3           |
+| ESLint                       | 9.39.5          |
+| eslint-config-next           | 16.3.8          |
+| Vitest                       | 4.1.11          |
+| Express / cors               | 5.2.1 / 2.8.6   |
+| @types/node                  | 20.19.43        |     |
+| @types/express / @types/cors | 5.0.6 / 2.8.19  |
+
+## Instalacja i uruchomienie
+
+Uruchamiaj polecenia z katalogu głównego repozytorium. Do odtworzenia sprawdzonego środowiska użyj Node.js 22.20.0 i npm 10.9.3.
 
 ```bash
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Adres aplikacji: [http://localhost:3000](http://localhost:3000). Katalog: [http://localhost:3000/pages/product-list](http://localhost:3000/pages/product-list).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Weryfikacja i uruchomienie produkcyjne:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run lint
+npm run test
+npm run build
+npm run start
+```
 
-## Learn More
+Domyślny port to 3000. Można wskazać inny:
 
-To learn more about Next.js, take a look at the following resources:
+## Struktura i trasy
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```text
+app/
+  layout.tsx                      wspólny layout i nagłówek
+  global.css                      style globalne
+  page.tsx                        strona główna
+  not-found.tsx                   widok nieznanego adresu
+  api/products/route.ts           GET /api/products
+  components/
+    Header.tsx                    logo i nawigacja Link
+    ProductList.tsx               pobieranie API i karty produktów
+    ProductFilters.tsx            filtry kategorii i dostępności
+    SortRadio.tsx                 wybór sortowania
+    CategoryIcon.tsx              ikony SVG kategorii
+    product-list.css              style katalogu
+  pages/
+    about/page.tsx
+    basket/page.tsx
+    order-history/page.tsx
+    product-list/page.tsx          odczyt parametrów URL
+    product-list/error.tsx         granica błędów segmentu
+  types/products.ts               typy danych
+lib/products/product-repo.tsx     serwerowy odczyt, walidacja i filtrowanie
+data/products.json               przykładowy katalog
+tests/                           testy repozytorium i API
+scripts/product-generator.ts     generator przykładowych danych
+public/                          zasoby statyczne
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Adres                  | Aktualna funkcja                  |
+| ---------------------- | --------------------------------- |
+| `/`                    | Prosty widok strony głównej       |
+| `/pages/about`         | Prosty widok informacji o sklepie |
+| `/pages/product-list`  | Katalog pobierany przez API       |
+| `/pages/basket`        | Widok zastępczy koszyka           |
+| `/pages/order-history` | Widok zastępczy historii zamówień |
+| `/api/products`        | API produktów, tylko odczyt       |
 
-## Deploy on Vercel
+Folder `app/pages` jest zwykłym segmentem App Routera, dlatego `pages` występuje w adresach. Nie jest to katalog `pages/` starszego Pages Routera. Pusty plik `app/pages/api/products.ts` nie definiuje endpointu; rzeczywista implementacja znajduje się w `app/api/products/route.ts`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 1. Struktura i routing
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 1. Czym różnią się `page.tsx` i `layout.tsx`?
 
-## Obsługa pustego katalogu, 404 i awarii (Lab 06)
+`page.tsx` definiuje zawartość konkretnej strony i udostępnia trasę danego segmentu. `layout.tsx` otacza strony przez `children` i definiuje wspólne elementy. Główny layout zawiera także `<html>` i `<body>`. Tutaj dodaje nagłówek i style, a strona katalogu odczytuje parametry URL. [Dokumentacja stron i layoutów](https://nextjs.org/docs/app/getting-started/layouts-and-pages).
 
-Projekt używa Next.js 16.3.8 i App Router. Katalog jest obecnie dostępny pod
-`/pages/product-list`.
+### 2. Czy do publicznej strony potrzeba osobnego layoutu?
 
-- Pusta tablica z repozytorium daje zwykły komunikat „Katalog produktów jest pusty.”
-  w `page.tsx`, bez rzucania wyjątku.
-- Nieznany URL obsługuje główny `app/not-found.tsx`, z linkiem na stronę główną.
-- Błąd odczytu, parsowania lub walidacji danych trafia do
-  `app/pages/product-list/error.tsx`. Jest to komponent klienta z ogólnym
-  komunikatem, który nie wyświetla treści wyjątku ani ścieżek plików.
-  Przycisk „Spróbuj ponownie” wywołuje `retry()` udostępnione przez Next.js 16.3.8:
-  ponownie pobiera dane i renderuje segment. Samo `reset()` tylko czyści stan
-  granicy, dlatego nie jest tu używane. Podczas ponawiania przycisk jest wyłączony.
+Nie. Strona publiczna może korzystać z głównego `app/layout.tsx`, jak wszystkie strony tego projektu. Dodatkowy layout ma sens, jeśli część aplikacji potrzebuje innego wspólnego układu. Publiczny dostęp nie wymaga osobnego layoutu, a sam layout nie stanowi mechanizmu autoryzacji. [Dokumentacja layoutów](https://nextjs.org/docs/app/api-reference/file-conventions/layout).
 
-Weryfikacja 2026-10-12: TypeScript, ESLint i build produkcyjny zakończyły się
-pomyślnie (ESLint zgłasza istniejące ostrzeżenie o nieużywanym `findProductById`).
-W development i produkcji tymczasowo zastąpiono zawartość `data/products.json`
-pustą tablicą, a następnie niepoprawnym JSON-em. Pusty katalog zwrócił HTTP 200
-i komunikat, awaria HTTP 500 i wpis w logu serwera. W odpowiedzi produkcyjnej nie
-było szczegółów wyjątku. Po eksperymencie przywrócono oryginalny plik i sprawdzono
-wyświetlenie 100 produktów. Nieznany URL zwrócił własny widok z HTTP 404 i linkiem
-powrotu. Produkcyjne trasy katalogu, informacji o sklepie, koszyka i historii
-odpowiedziały HTTP 200. Testy HTTP nie obejmowały kliknięcia przycisku ponowienia
-w przeglądarce.
+### 3. Co w nawigacji przez `Link` pozostaje wspólne?
 
-Eksperyment można powtórzyć po wykonaniu `npm run build` i `npm run start`:
-zachować kopię JSON-u, ustawić `[]` i wejść do katalogu, następnie wstawić
-niepoprawny JSON i ponownie wejść do katalogu. Po przywróceniu poprawnego pliku
-kliknąć „Spróbuj ponownie”. Zawsze przywrócić oryginalne dane po teście.
-Katalog korzysta z `searchParams`, więc jest renderowany przy żądaniu;
-przeprowadzony eksperyment nie był błędem podczas prerenderowania w buildzie.
+Przy przejściu między trasami współdzielącymi layout pozostaje on zamontowany i zachowuje stan swoich komponentów klienta. Tutaj wspólne są nagłówek, logo i nawigacja. Zmienia się zawartość strony.
 
-Brak zaimplementowanej funkcjonalności nie jest awarią i powinien mieć zwykły
-widok. Granica `error.tsx` nie obejmuje layoutu w tym samym segmencie.
-Widok `not-found` może mieć HTTP 200, jeśli odpowiedź była już strumieniowana;
-sprawdzony nieznany URL zwrócił HTTP 404.
+## 2. Granica serwer–klient
 
-Źródła: dokumentacja przypiętej wersji w
-`node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/error.md`
-i `not-found.md`, oraz [error.tsx](https://nextjs.org/docs/app/api-reference/file-conventions/error)
-i [not-found.tsx](https://nextjs.org/docs/app/api-reference/file-conventions/not-found).
+Przepływ danych: przeglądarka → `GET /api/products` → `listProducts` → `data/products.json` → odpowiedź JSON → karty produktów.
 
-## Read-only API produktów
+### 4. Gdzie wykonuje się funkcja repozytorium?
 
-`GET /api/products` zwraca tablicę produktów w JSON. Route Handler wywołuje
-`listProducts` z repozytorium serwerowego. Frontend pobiera produkty przez API.
-Katalog pozwala wybrać kategorię i produkty dostępne w magazynie. Filtry oraz
-sortowanie są zapisane w URL; przycisk „Clear filters” zachowuje sortowanie.
+`listProducts` wykonuje się na serwerze Node.js
 
-| Parametr | Dozwolone wartości | Gdy pominięty |
-| --- | --- | --- |
-| `type` | `cpu`, `gpu`, `ram`, `disk` | Wszystkie kategorie |
-| `sort` | `nameAsc`, `nameDesc`, `priceAsc`, `priceDesc` | `nameAsc` |
-| `available` | `true`, `false` | Wszystkie produkty, również bez zapasu |
+### 5. Jakie dane trafiają do przeglądarki?
 
-Przykład: `/api/products?type=gpu&sort=priceAsc` zwraca karty graficzne od
-najtańszej. Cena w odpowiedzi pozostaje liczbą całkowitą w groszach.
-Parametry rozróżniają wielkość liter. Nieznana, pusta lub powtórzona wartość,
-a także nieobsługiwany parametr, daje HTTP 400 i JSON `{ "error": "…" }`.
-Poprawne zapytanie bez wyników daje HTTP 200 i `[]`, również dla pustego katalogu.
-Awaria repozytorium daje HTTP 500 z ogólnym komunikatem JSON; szczegóły trafiają
-do logu serwera. API nie udostępnia zapisu: POST, PUT, PATCH i DELETE dają HTTP 405.
+HTML, parametry katalogu i JavaScript komponentów klienta.
 
-Źródło: dokumentacja Route Handlers przypiętej wersji w
-`node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/route.md`.
+### 6. Dlaczego import całego JSON do komponentu klienta zmienia architekturę?
 
-Weryfikacja API (2026-10-13): sprawdzono przez HTTP wszystkie kombinacje czterech
-kategorii i czterech porządków sortowania oraz wartości domyślne. Dziesięć
-przypadków błędnych parametrów dało JSON z HTTP 400; POST, PUT, PATCH i DELETE
-dały HTTP 405. Poprawny filtr bez dopasowań oraz pusty katalog zwróciły `[]`
-z HTTP 200. Tymczasowe uszkodzenie JSON-u dało ogólny komunikat z HTTP 500;
-walidacja błędnego zapytania nadal zwracała 400 przed odczytem repozytorium.
-Po eksperymencie przywrócono oryginalne 100 produktów. TypeScript i ESLint
-przeszły, z istniejącym ostrzeżeniem o nieużywanym `findProductById`.
+Import dołącza dane do kodu dostarczanego przeglądarce, zamiast pobierać je przez API. Zwiększa pakiet klienta, udostępnia cały plik niezależnie od filtrów i wymaga przebudowania aplikacji po zmianie danych. Filtrowanie może wtedy odbywać się w przeglądarce.
 
-## Testy automatyczne
+### 7. Czy `use client` wyklucza początkowe renderowanie HTML na serwerze?
 
-Uruchom `npm test` (Vitest 4). Testy nie wymagają działającego serwera i nie
-modyfikują `data/products.json`: odczyt pliku oraz zależność repozytorium w API
-są zastępowane kontrolowanymi danymi wyłącznie w testach.
+Nie. Komponenty klienta mogą uczestniczyć w przygotowaniu początkowego HTML na serwerze.
 
-- `tests/product-repo.test.ts`: cztery porządki sortowania, brak mutacji
-  zamrożonych danych, filtr dostępności i kategorii, pusty wynik, odczyt po ID
-  i jego brak, duplikaty ID i kodu, ujemna i zerowa cena oraz awaria odczytu/JSON.
-- `tests/products-api.test.ts`: parametry domyślne i poprawne wartości,
-  przekazanie filtrów do repozytorium, wyniki i pusta tablica, odpowiedź 400
-  bez odczytu repozytorium oraz bezpieczna odpowiedź 500 i logowanie awarii.
+### 9. Czy granica `error.tsx` przechwytuje błąd layoutu w tym samym segmencie?
 
-Konfiguracja `vitest.config.mts` używa środowiska Node i aliasu `@/`.
-Import `server-only` jest zastępowany pustym modułem Next.js tylko w testach;
-w aplikacji ochrona modułu serwerowego nadal działa.
-Walidator odrzuca duplikaty, niecałkowite lub ujemne ceny i niepoprawne ID,
-a cena zero jest poprawna. `findProductById` jest eksportowany z repozytorium.
+Nie. Granica znajduje się wewnątrz layoutu danego segmentu: obejmuje stronę i potomków, ale nie ten layout.
 
-Weryfikacja: `npm test`, `npm run lint`, `npx tsc --noEmit --incremental false`
-i `npm run build`. Skrypt lint wywołuje bezpośrednio ESLint. Awarie testowe
-istnieją tylko w mockach; w kodzie aplikacji i pliku danych nie pozostaje
-wymuszona awaria.
-Wynik sprawdzeń (2026-10-13): 32 testy w dwóch plikach przeszły; ESLint,
-TypeScript i build produkcyjny zakończyły się bez błędów.
+W katalogu `error.tsx` obsługuje nieoczekiwane błędy renderowania segmentu. Błędy asynchronicznego `fetch` są przechwytywane lokalnie w `ProductList.tsx`: użytkownik widzi ogólny komunikat i przycisk ponowienia żądania.
+
+### 10. Dlaczego widok „nie znaleziono” nie zawsze oznacza HTTP 404 w odpowiedzi strumieniowej?
+
+Jeśli serwer rozpoczął strumieniowanie i wysłał nagłówki z HTTP `200`, nie może później zmienić statusu na `404`. Może jednak wyrenderować widok `not-found`.
+
+## API, filtry i sortowanie
+
+`GET /api/products` zwraca tablicę produktów w JSON.
+
+| Parametr    | Dozwolone wartości                             | Gdy pominięty       |
+| ----------- | ---------------------------------------------- | ------------------- |
+| `type`      | `cpu`, `gpu`, `ram`, `disk`                    | Wszystkie kategorie |
+| `available` | `true`, `false`                                | Wszystkie produkty  |
+| `sort`      | `nameAsc`, `nameDesc`, `priceAsc`, `priceDesc` | `nameAsc`           |
+
+`available=true` wybiera produkty z `amount > 0`; `false` nie ogranicza dostępności. Przykład: `/api/products?type=gpu&available=true&sort=priceAsc`. Cena jest całkowitą liczbą groszy; frontend dzieli ją przez 100 i formatuje jako PLN.
+
+Nieznane parametry, niedozwolone lub puste wartości i powtórzone parametry dają HTTP `400` z JSON-em błędu. POST, PUT, PATCH i DELETE nie są zaimplementowane i dają `405`. [Route Handlers](https://nextjs.org/docs/app/api-reference/file-conventions/route).
+
+Kontrolki zapisują filtry i sortowanie w URL. Odświeżenie odtwarza wybór, a „Clear filters” zachowuje sortowanie. Niepoprawne wartości URL strony są zastępowane ustawieniami domyślnymi; bezpośrednie API stosuje ścisłą walidację. Frontend obsługuje ładowanie, pusty wynik i ponowienie po błędzie, a nieaktualne żądania anuluje przez `AbortController`.
+
+## Wyniki weryfikacji
+
+Polecenia wykonano ponownie 13 października 2026 r. na aktualnym kodzie:
+
+| Polecenie                      | Wynik                                                                                                        |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `npm ci`                       | Kod wyjścia 0; zainstalowano 441 pakietów. Ostrzeżenie `deprecated` dla ESLint 9.39.5.                       |
+| `npm run lint`                 | Kod wyjścia 0; bez błędów, 2 ostrzeżenia o nieużywanych importach `Geist` i `Geist_Mono` w `app/layout.tsx`. |
+| `npm run test`                 | Kod wyjścia 0; 40 testów w 2 plikach przeszło.                                                               |
+| `npm run build`                | Kod wyjścia 0; kompilacja, kontrola TypeScript i generowanie stron zakończone poprawnie.                     |
+| `npm run start -- --port 3100` | Serwer produkcyjny uruchomił się poprawnie; wykonano poniższe sprawdzenia HTTP.                              |
+
+Build oznaczył `/api/products` i `/pages/product-list` jako trasy dynamiczne, a pozostałe strony jako statyczne.
+
+Po zmianie głównego layoutu powtórzono lint i build oraz sprawdzono ponownie strony, logo, HTTP `404` i API z połączonymi filtrami oraz sortowaniem. Potwierdzono również `lang="pl"` w produkcyjnym HTML. Wyniki w tabeli uwzględniają tę końcową weryfikację.
+
+`tests/product-repo.test.ts` sprawdza sortowanie, filtry, pusty wynik, odczyt po ID, walidację, brak mutacji danych i błędy odczytu/JSON. `tests/products-api.test.ts` sprawdza parametry, przekazywanie filtrów, wyniki, HTTP `400` i bezpieczną odpowiedź `500`. Testy używają mocków i nie zmieniają katalogu danych. Alias `server-only` na pusty moduł obowiązuje tylko w konfiguracji Vitest.

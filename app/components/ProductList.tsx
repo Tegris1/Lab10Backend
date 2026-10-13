@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { Product, ProductSort, ProductType } from "@/app/types/products";
 import SortRadio from "./SortRadio";
 import ProductFilters from "./ProductFilters";
+import CategoryIcon from "./CategoryIcon";
 import "./product-list.css";
 
 const priceFormatter = new Intl.NumberFormat("pl-PL", {
@@ -90,7 +91,10 @@ export default function ProductList({ sort, type, available }: {
             <li key={product.id}>
               <article className="product-card">
                 <div className="product-card-category">
-                  <span>{product.type.toUpperCase()}</span>
+                  <span className="product-category-label">
+                    <CategoryIcon type={product.type} />
+                    {product.type.toUpperCase()}
+                  </span>
                   <span className={`product-stock ${product.amount > 0 ? "product-stock-available" : "product-stock-empty"}`}>
                     {product.amount > 0 ? "In stock" : "Out of stock"}
                   </span>

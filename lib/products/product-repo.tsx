@@ -54,20 +54,24 @@ function readProducts(): Promise<Product[]> {
   });
 }
 
-function findProductById(id: number): Promise<Product | null> {
+export function findProductById(id: number): Promise<Product | null> {
   return readProducts().then((products) => {
     return products.find((product) => product.id === id) || null;
   });
 }
 
 function validate(productList: Product[]): void {
+  const ids = new Set<number>();
+  const codes = new Set<string>();
   for (const product of productList) {
     if (
-      !product.id ||
+      !Number.isInteger(product.id) ||
+      product.id <= 0 ||
       !product.code ||
       !product.name ||
       !product.type ||
-      !product.price ||
+      !Number.isInteger(product.price) ||
+      product.price < 0 ||
       !Number.isInteger(product.amount) ||
       product.amount < 0 ||
       !product.description ||
@@ -76,6 +80,11 @@ function validate(productList: Product[]): void {
     ) {
       throw new Error(`Invalid product data: ${JSON.stringify(product)}`);
     }
+    if (ids.has(product.id) || codes.has(product.code)) {
+      throw new Error("Duplicate product id or code");
+    }
+    ids.add(product.id);
+    codes.add(product.code);
     if (
       product.type !== "cpu" &&
       product.type !== "gpu" &&

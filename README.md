@@ -108,3 +108,29 @@ z HTTP 200. Tymczasowe uszkodzenie JSON-u dało ogólny komunikat z HTTP 500;
 walidacja błędnego zapytania nadal zwracała 400 przed odczytem repozytorium.
 Po eksperymencie przywrócono oryginalne 100 produktów. TypeScript i ESLint
 przeszły, z istniejącym ostrzeżeniem o nieużywanym `findProductById`.
+
+## Testy automatyczne
+
+Uruchom `npm test` (Vitest 4). Testy nie wymagają działającego serwera i nie
+modyfikują `data/products.json`: odczyt pliku oraz zależność repozytorium w API
+są zastępowane kontrolowanymi danymi wyłącznie w testach.
+
+- `tests/product-repo.test.ts`: cztery porządki sortowania, brak mutacji
+  zamrożonych danych, filtr dostępności i kategorii, pusty wynik, odczyt po ID
+  i jego brak, duplikaty ID i kodu, ujemna i zerowa cena oraz awaria odczytu/JSON.
+- `tests/products-api.test.ts`: parametry domyślne i poprawne wartości,
+  przekazanie filtrów do repozytorium, wyniki i pusta tablica, odpowiedź 400
+  bez odczytu repozytorium oraz bezpieczna odpowiedź 500 i logowanie awarii.
+
+Konfiguracja `vitest.config.mts` używa środowiska Node i aliasu `@/`.
+Import `server-only` jest zastępowany pustym modułem Next.js tylko w testach;
+w aplikacji ochrona modułu serwerowego nadal działa.
+Walidator odrzuca duplikaty, niecałkowite lub ujemne ceny i niepoprawne ID,
+a cena zero jest poprawna. `findProductById` jest eksportowany z repozytorium.
+
+Weryfikacja: `npm test`, `npm run lint`, `npx tsc --noEmit --incremental false`
+i `npm run build`. Skrypt lint wywołuje bezpośrednio ESLint. Awarie testowe
+istnieją tylko w mockach; w kodzie aplikacji i pliku danych nie pozostaje
+wymuszona awaria.
+Wynik sprawdzeń (2026-10-13): 32 testy w dwóch plikach przeszły; ESLint,
+TypeScript i build produkcyjny zakończyły się bez błędów.

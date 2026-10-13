@@ -1,31 +1,12 @@
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
+import type { Product, ProductType } from "../app/types/products.js";
 
 console.log("Starting product generator...");
 
-type ProductType = "cpu" | "gpu" | "ram" | "disk";
-
-type Product = {
-  id: number;
-  code: string;
-  name: string;
-  type: ProductType;
-  price: number;
-  amount: number;
-  description: string;
-  image: string;
-};
-
 const TYPES: ProductType[] = ["cpu", "gpu", "ram", "disk"];
 
-const BRANDS = [
-  "NovaTech",
-  "Quantum",
-  "Titan",
-  "Vertex",
-  "Apex",
-  "CoreMax",
-];
+const BRANDS = ["NovaTech", "Quantum", "Titan", "Vertex", "Apex", "CoreMax"];
 
 function createRng(seed: number) {
   let state = seed >>> 0;
@@ -41,25 +22,15 @@ function createRng(seed: number) {
   };
 }
 
-function randomInt(
-  random: () => number,
-  min: number,
-  max: number,
-): number {
+function randomInt(random: () => number, min: number, max: number): number {
   return Math.floor(random() * (max - min + 1)) + min;
 }
 
-function randomItem<T>(
-  random: () => number,
-  items: T[],
-): T {
+function randomItem<T>(random: () => number, items: T[]): T {
   return items[randomInt(random, 0, items.length - 1)];
 }
 
-function generateCode(
-  random: () => number,
-  usedCodes: Set<string>,
-): string {
+function generateCode(random: () => number, usedCodes: Set<string>): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
   while (true) {
@@ -99,6 +70,7 @@ function generateProducts(seed: number): Product[] {
       price: randomInt(random, 1000, 500000),
       amount: randomInt(random, 0, 100),
       description: description.slice(0, 255),
+      date: new Date().toISOString(),
       image: `/img/${type}.jpg`,
     };
   });
@@ -112,25 +84,16 @@ const products = generateProducts(SEED);
 
 console.log(`Generated ${products.length} products`);
 
-const outputDirectory = join(
-  process.cwd(),
-  "backend",
-  "data",
-);
+const outputDirectory = "D:\\Studia\\backend\\computer-shop-2026jj\\data";
 
 mkdirSync(outputDirectory, {
   recursive: true,
 });
 
-const outputPath = join(
-  outputDirectory,
-  "products.json",
-);
+const outputPath = join(outputDirectory, "products.json");
 
-writeFileSync(
-  outputPath,
-  JSON.stringify(products, null, 2),
-  "utf-8",
-);
+console.log(`Writing products to: ${outputPath}`);
+
+writeFileSync(outputPath, JSON.stringify(products, null, 2), "utf-8");
 
 console.log(`Products written to: ${outputPath}`);

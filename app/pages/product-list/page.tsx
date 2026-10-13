@@ -1,16 +1,15 @@
-import { listProducts } from "@/lib/products/product-repo";
-import type { ProductSort } from "@/app/types/products";
+import type { ProductSort, ProductType } from "@/app/types/products";
 import type { Metadata } from "next";
-import SortRadio from "@/app/components/SortRadio";
+import ProductList from "@/app/components/ProductList";
 
 export const metadata: Metadata = { title: "Product List" };
 
-export default async function ProductList({
+export default async function ProductListPage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const { sort: requestedSort } = await searchParams;
+  const { sort: requestedSort, type: requestedType, available: requestedAvailable } = await searchParams;
   const sort: ProductSort =
     requestedSort === "nameAsc" ||
     requestedSort === "nameDesc" ||
@@ -18,37 +17,10 @@ export default async function ProductList({
     requestedSort === "priceDesc"
       ? requestedSort
       : "nameAsc";
-  const products = await listProducts({ sort });
-
-  return (
-    <main>
-      <h1>Product List</h1>
-
-      <SortRadio sort={sort} />
-      {products.length === 0 ? (
-        <p>Katalog produktów jest pusty.</p>
-      ) : (
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Name</th>
-              <th scope="col">Type</th>
-              <th scope="col">Price</th>
-              <th scope="col">Stock</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((product) => (
-              <tr key={product.id}>
-                <td>{product.name}</td>
-                <td>{product.type}</td>
-                <td>{product.price}</td>
-                <td>{product.amount}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </main>
-  );
+  const type: ProductType | undefined =
+    requestedType === "cpu" || requestedType === "gpu" ||
+    requestedType === "ram" || requestedType === "disk"
+      ? requestedType
+      : undefined;
+  return <ProductList sort={sort} type={type} available={requestedAvailable === "true"} />;
 }

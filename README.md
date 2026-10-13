@@ -80,14 +80,16 @@ i [not-found.tsx](https://nextjs.org/docs/app/api-reference/file-conventions/not
 
 ## Read-only API produktów
 
-`GET /api/products` zwraca tablicę produktów w JSON. Route Handler i strona
-katalogu wywołują bezpośrednio to samo `listProducts` z repozytorium serwerowego.
-Strona nie wykonuje żądania HTTP do API.
+`GET /api/products` zwraca tablicę produktów w JSON. Route Handler wywołuje
+`listProducts` z repozytorium serwerowego. Frontend pobiera produkty przez API.
+Katalog pozwala wybrać kategorię i produkty dostępne w magazynie. Filtry oraz
+sortowanie są zapisane w URL; przycisk „Clear filters” zachowuje sortowanie.
 
 | Parametr | Dozwolone wartości | Gdy pominięty |
 | --- | --- | --- |
 | `type` | `cpu`, `gpu`, `ram`, `disk` | Wszystkie kategorie |
 | `sort` | `nameAsc`, `nameDesc`, `priceAsc`, `priceDesc` | `nameAsc` |
+| `available` | `true`, `false` | Wszystkie produkty, również bez zapasu |
 
 Przykład: `/api/products?type=gpu&sort=priceAsc` zwraca karty graficzne od
 najtańszej. Cena w odpowiedzi pozostaje liczbą całkowitą w groszach.

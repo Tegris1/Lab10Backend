@@ -5,7 +5,6 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./", import.meta.url)),
-      // Tests run in Node, outside Next.js's server-only import handling.
       "server-only": fileURLToPath(
         new URL("./node_modules/next/dist/compiled/server-only/empty.js", import.meta.url),
       ),

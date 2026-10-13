@@ -36,9 +36,24 @@ describe("GET /api/products", () => {
     expect(await (await GET(request())).json()).toEqual(products);
   });
 
+  it.each(["true", "false"])("passes availability %s with category and sorting", async available => {
+    const response = await GET(request(`?type=cpu&sort=priceAsc&available=${available}`));
+    expect(response.status).toBe(200);
+    expect(listProducts).toHaveBeenCalledWith({
+      type: "cpu", sort: "priceAsc", available: available === "true",
+    });
+  });
+
+  it("supports availability without a category", async () => {
+    expect((await GET(request("?available=true"))).status).toBe(200);
+    expect(listProducts).toHaveBeenCalledWith({ type: undefined, sort: "nameAsc", available: true });
+  });
+
   it.each([
     "?type=invalid", "?type=", "?type=CPU", "?sort=invalid", "?sort=",
     "?sort=NAMEASC", "?type=cpu&type=gpu", "?sort=nameAsc&sort=priceAsc", "?unknown=1",
+    "?available=", "?available=1", "?available=TRUE", "?available=invalid",
+    "?available=true&available=false",
   ])("returns JSON 400 for %s before reading data", async query => {
     const response = await GET(request(query));
     expect(response.status).toBe(400);

@@ -13,9 +13,9 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
 
   for (const key of params.keys()) {
-    if (key !== "type" && key !== "sort") {
+    if (key !== "type" && key !== "sort" && key !== "available") {
       return Response.json(
-        { error: "Dozwolone parametry to type i sort." },
+        { error: "Dozwolone parametry to type, sort i available." },
         { status: 400 },
       );
     }
@@ -45,8 +45,20 @@ export async function GET(request: Request) {
     );
   }
 
+  const requestedAvailable = params.get("available");
+  if (requestedAvailable !== null && requestedAvailable !== "true" && requestedAvailable !== "false") {
+    return Response.json(
+      { error: "Parametr available musi mieć wartość: true lub false." },
+      { status: 400 },
+    );
+  }
+
   try {
-    const products = await listProducts({ type, sort: sort ?? "nameAsc" });
+    const products = await listProducts({
+      type,
+      sort: sort ?? "nameAsc",
+      ...(requestedAvailable === null ? {} : { available: requestedAvailable === "true" }),
+    });
     return Response.json(products);
   } catch (error) {
     console.error("Nie udało się odczytać katalogu produktów:", error);

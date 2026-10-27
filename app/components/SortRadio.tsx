@@ -1,22 +1,20 @@
 "use client";
-import type { ProductSort } from "@/app/types/products";
+import type { CatalogSort } from "@/app/types/products";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 
-const sortOptions: { value: ProductSort; label: string }[] = [
-  { value: "nameAsc", label: "Name Ascending" },
-  { value: "nameDesc", label: "Name Descending" },
-  { value: "priceAsc", label: "Price Ascending" },
-  { value: "priceDesc", label: "Price Descending" },
+const sortOptions: { value: CatalogSort; label: string }[] = [
+  { value: "name", label: "Name (A–Z)" },
+  { value: "newest", label: "Newest first" },
 ];
 
-export default function SortRadio({ sort }: { sort: ProductSort }) {
+export default function SortRadio({ sort }: { sort: CatalogSort }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
-  function changeSort(value: ProductSort) {
+  function changeSort(value: CatalogSort) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("sort", value);
 

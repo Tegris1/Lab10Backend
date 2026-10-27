@@ -1,11 +1,11 @@
 import Image from "next/image";
-import Link from "next/link";
+import NavLink from "./NavLink";
 
 export default function Header() {
   return (
     <header id="main-header">
       <div id="logo">
-        <Link href="/">
+        <NavLink href="/">
           <Image
             className="logo"
             src="/politechnika-krakowska-logo%20(1).svg"
@@ -14,14 +14,15 @@ export default function Header() {
             height={1946}
             priority
           />
-        </Link>
+        </NavLink>
       </div>
       <nav aria-label="Main navigation">
         <ul>
-          <li><Link href="/pages/about">About</Link></li>
-          <li><Link href="/pages/product-list">Product List</Link></li>
-          <li><Link href="/pages/basket">Basket</Link></li>
-          <li><Link href="/pages/order-history">Order History</Link></li>
+          <li><NavLink href="/pages/about">About</NavLink></li>
+          <li><NavLink href="/product-list">Product List</NavLink></li>
+          <li><NavLink href="/catalog">Catalogue</NavLink></li>
+          <li><NavLink href="/pages/basket">Basket</NavLink></li>
+          <li><NavLink href="/pages/order-history">Order History</NavLink></li>
         </ul>
       </nav>
     </header>

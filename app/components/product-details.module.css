@@ -1,0 +1,59 @@
+@reference "tailwindcss";
+
+.panel {
+  @apply rounded-2xl bg-white p-5 font-sans text-slate-900 shadow-sm sm:p-8;
+}
+
+.eyebrow {
+  @apply mb-2 text-xs font-semibold uppercase tracking-widest text-indigo-700;
+}
+
+.heading {
+  @apply mb-6 text-2xl font-bold tracking-tight sm:text-4xl;
+}
+
+.figure {
+  @apply mb-6;
+}
+
+.imageLink {
+  @apply block overflow-hidden rounded-xl bg-slate-50 outline-offset-4 focus-visible:outline-3 focus-visible:outline-indigo-700;
+}
+
+.image {
+  @apply mx-auto h-auto w-full max-w-160 transition-transform motion-reduce:transition-none;
+}
+
+@media (hover: hover) {
+  .imageLink:hover .image {
+    @apply scale-105;
+  }
+}
+
+.caption {
+  @apply mt-2 text-sm text-slate-600;
+}
+
+.description {
+  @apply mb-6 leading-relaxed text-slate-600;
+}
+
+.facts {
+  @apply mb-8 grid grid-cols-1 gap-4 rounded-xl bg-slate-50 p-4 sm:grid-cols-2 lg:grid-cols-3;
+}
+
+.fact {
+  @apply min-w-0;
+}
+
+.label {
+  @apply text-xs font-semibold uppercase tracking-wide text-slate-500;
+}
+
+.value {
+  @apply mt-1 wrap-break-word font-semibold;
+}
+
+.backLink {
+  @apply inline-flex rounded-lg bg-indigo-700 px-4 py-3 font-semibold text-white hover:bg-indigo-800 focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-indigo-700;
+}

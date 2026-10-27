@@ -1,115 +1,94 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import type { Product, ProductSort, ProductType } from "@/app/types/products";
+import "server-only";
+import type { Product, CatalogSort, ProductStock, ProductType } from "@/app/types/products";
 import SortRadio from "./SortRadio";
 import ProductFilters from "./ProductFilters";
 import CategoryIcon from "./CategoryIcon";
 import "./product-list.css";
+import ProductNavigation, { ProductPageLink } from "./ProductNavigation";
 
 const priceFormatter = new Intl.NumberFormat("pl-PL", {
   style: "currency",
   currency: "PLN",
 });
 
-type ProductResult = {
-  requestKey: string;
-} & ({ products: Product[]; error?: never } | { products?: never; error: string });
-
-export default function ProductList({ sort, type, available }: {
-  sort: ProductSort;
+export default function ProductList({
+  sort,
+  type,
+  stock,
+  warnings,
+  products,
+}: {
+  sort: CatalogSort;
   type?: ProductType;
-  available: boolean;
+  stock: ProductStock;
+  warnings: string[];
+  products: Product[];
 }) {
-  const [attempt, setAttempt] = useState(0);
-  const [result, setResult] = useState<ProductResult | null>(null);
-  const requestKey = `${sort}:${type ?? "all"}:${available}:${attempt}`;
-  const currentResult = result?.requestKey === requestKey ? result : null;
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    async function loadProducts() {
-      try {
-        const params = new URLSearchParams({ sort });
-        if (type) params.set("type", type);
-        if (available) params.set("available", "true");
-        const response = await fetch(`/api/products?${params}`, {
-          signal: controller.signal,
-          cache: "no-store",
-        });
-        if (!response.ok) {
-          throw new Error(`Products request failed: ${response.status}`);
-        }
-        const products: Product[] = await response.json();
-        if (!controller.signal.aborted) {
-          setResult({ requestKey, products });
-        }
-      } catch {
-        if (!controller.signal.aborted) {
-          setResult({ requestKey, error: "Unable to load products. Please try again." });
-        }
-      }
-    }
-
-    void loadProducts();
-    return () => controller.abort();
-  }, [sort, type, available, requestKey]);
-
   return (
-    <main className="product-list">
-      <header className="product-list-heading">
-        <div>
-          <p className="product-list-eyebrow">Computer components</p>
-          <h1>Product List</h1>
-          <p>Find the right components for your next build.</p>
-        </div>
-        {currentResult?.products && (
+    <ProductNavigation>
+      <main className="product-list font-sans">
+        <header className="product-list-heading">
+          <div>
+            <p className="product-list-eyebrow">Computer components</p>
+            <h1 className="font-bold">Product List</h1>
+            <p>Find the right components for your next build.</p>
+          </div>
           <span className="product-count" role="status">
-            {currentResult.products.length} {currentResult.products.length === 1 ? "product" : "products"}
+            {products.length}{" "}
+            {products.length === 1 ? "product" : "products"}
           </span>
+        </header>
+        {warnings.length > 0 && (
+          <div className="product-list-message" role="status" aria-label="URL settings notice">
+            {warnings.map((warning) => <p key={warning}>{warning}</p>)}
+          </div>
         )}
-      </header>
-      <div className="product-list-controls">
-        <ProductFilters type={type} available={available} />
-        <SortRadio sort={sort} />
-      </div>
-      {currentResult === null ? (
-        <p className="product-list-message" role="status">Loading products…</p>
-      ) : currentResult.error !== undefined ? (
-        <div className="product-list-message product-list-error">
-          <p role="alert">{currentResult.error}</p>
-          <button type="button" onClick={() => setAttempt((value) => value + 1)}>
-            Try again
-          </button>
+        <div className="product-list-controls">
+          <ProductFilters type={type} stock={stock} sort={sort} />
+          <SortRadio sort={sort} />
         </div>
-      ) : currentResult.products.length === 0 ? (
-        <p className="product-list-message">{type || available ? "No products match the selected filters." : "Katalog produktów jest pusty."}</p>
-      ) : (
-        <ul className="product-items" aria-label="Products">
-          {currentResult.products.map((product) => (
-            <li key={product.id}>
-              <article className="product-card">
-                <div className="product-card-category">
-                  <span className="product-category-label">
-                    <CategoryIcon type={product.type} />
-                    {product.type.toUpperCase()}
-                  </span>
-                  <span className={`product-stock ${product.amount > 0 ? "product-stock-available" : "product-stock-empty"}`}>
-                    {product.amount > 0 ? "In stock" : "Out of stock"}
-                  </span>
-                </div>
-                <h2>{product.name}</h2>
-                <p className="product-description">{product.description}</p>
-                <footer className="product-card-footer">
-                  <span className="product-price">{priceFormatter.format(product.price / 100)}</span>
-                  <span className="product-quantity">{product.amount} available</span>
-                </footer>
-              </article>
-            </li>
-          ))}
-        </ul>
-      )}
-    </main>
+        {products.length === 0 ? (
+          <p className="product-list-message">
+            {type || stock !== "all"
+              ? "No products match the selected filters."
+              : "Katalog produktów jest pusty."}
+          </p>
+        ) : (
+          <ul className="product-items" aria-label="Products">
+            {products.map((product) => (
+              <li key={product.id}>
+                <article className="product-card hover:border-indigo-300">
+                  <div className="product-card-category">
+                    <span className="product-category-label">
+                      <CategoryIcon type={product.type} />
+                      {product.type.toUpperCase()}
+                    </span>
+                    <span
+                      className={`product-stock ${product.amount > 0 ? "product-stock-available" : "product-stock-empty"}`}
+                    >
+                      {product.amount > 0 ? "In stock" : "Out of stock"}
+                    </span>
+                  </div>
+                  <h2 className="font-bold tracking-tight">{product.name}</h2>
+                  <p className="product-description">{product.description}</p>
+                  <footer className="product-card-footer">
+                    <span className="product-price">
+                      {priceFormatter.format(product.price / 100)}
+                    </span>
+                    <span className="product-quantity">
+                      {product.amount} available
+                    </span>
+                  </footer>
+                  <ProductPageLink href={`/product-list/${product.id}`} view="details"
+                    className="mt-3 w-fit font-semibold text-indigo-700 underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-indigo-700">
+                    to product details
+                  </ProductPageLink>
+                </article>
+              </li>
+            ))}
+          </ul>
+        )}
+      </main>
+    </ProductNavigation>
   );
 }

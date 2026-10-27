@@ -1,3 +1,4 @@
+@layer components {
 .product-list {
   --catalog-ink: #22234d;
   --catalog-muted: #5e6079;
@@ -278,4 +279,6 @@
   .product-card {
     transition: none;
   }
+}
+
 }

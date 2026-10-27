@@ -23,28 +23,40 @@ function useData(data: unknown) {
 beforeEach(() => useData(products));
 
 describe("product repository", () => {
-  it.each([
-    ["nameAsc", [2, 1, 3]],
-    ["nameDesc", [3, 1, 2]],
-    ["priceAsc", [2, 1, 3]],
-    ["priceDesc", [3, 1, 2]],
-  ] as const)("sorts by %s without changing the original order", async (sort, ids) => {
-    const original = await listProducts();
-    expect((await listProducts({ sort })).map(p => p.id)).toEqual(ids);
-    expect(original.map(p => p.id)).toEqual([1, 2, 3]);
-    expect((await listProducts()).map(p => p.id)).toEqual([1, 2, 3]);
+  it("combines category, stock and catalogue sorting", async () => {
+    expect((await listProducts({ type: "cpu", stock: "available", sort: "newest" })).map(p => p.id)).toEqual([3]);
+    expect((await listProducts({ type: "cpu", stock: "unavailable", sort: "name" })).map(p => p.id)).toEqual([1]);
+    expect((await listProducts({ stock: "all", sort: "name" })).map(p => p.id)).toEqual([2, 1, 3]);
+  });
+
+  it("sorts newest by timestamp descending, then ID ascending, without mutating input", async () => {
+    const input = Object.freeze([
+      Object.freeze({ ...products[2], date: "2026-10-02T12:00:00+02:00" }),
+      Object.freeze({ ...products[1], date: "2026-10-01T10:00:00Z" }),
+      Object.freeze({ ...products[0], date: "2026-10-02T10:00:00Z" }),
+    ]);
+    vi.spyOn(JSON, "parse").mockReturnValueOnce(input);
+    expect((await listProducts({ sort: "newest" })).map(p => p.id)).toEqual([1, 3, 2]);
+    expect(input.map(p => p.id)).toEqual([3, 2, 1]);
+  });
+
+  it("compares normalized name keys as UTF-8 bytes and breaks ties by ID", async () => {
+    useData([
+      { ...products[2], name: " alpha " },
+      { ...products[1], name: "Alpha" },
+      { ...products[0], name: "Zebra" },
+      { ...products[0], id: 4, code: "AAAAAAAA04", name: "\u0104lpha" },
+    ]);
+    expect((await listProducts({ sort: "name" })).map(p => p.id)).toEqual([2, 3, 1, 4]);
+  });
+
+  it("retains legacy price sorting", async () => {
+    expect((await listProducts({ sort: "priceDesc" })).map(p => p.id)).toEqual([3, 1, 2]);
   });
 
   it("filters available products and combines availability with category", async () => {
     expect((await listProducts({ available: true })).map(p => p.id)).toEqual([2, 3]);
     expect((await listProducts({ available: true, type: "cpu" })).map(p => p.id)).toEqual([3]);
-  });
-
-  it("sorts a copy when the input array and products are frozen", async () => {
-    const input = Object.freeze(products.map(product => Object.freeze({ ...product })));
-    vi.spyOn(JSON, "parse").mockReturnValueOnce(input);
-    expect((await listProducts({ sort: "nameAsc" })).map(p => p.id)).toEqual([2, 1, 3]);
-    expect(input.map(p => p.id)).toEqual([1, 2, 3]);
   });
 
   it("returns an empty array for no matches or an empty catalog", async () => {

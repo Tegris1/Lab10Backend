@@ -1,5 +1,7 @@
 export type ProductType = "cpu" | "gpu" | "ram" | "disk";
-export type ProductSort = "nameAsc" | "nameDesc" | "priceAsc" | "priceDesc";
+export type CatalogSort = "name" | "newest";
+export type ProductStock = "all" | "available" | "unavailable";
+export type ProductSort = CatalogSort | "nameAsc" | "nameDesc" | "priceAsc" | "priceDesc";
 
 export interface Product {
   id: number;

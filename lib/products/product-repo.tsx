@@ -1,5 +1,5 @@
 import { readFile } from "fs";
-import type { Product, ProductSort, ProductType } from "../../app/types/products";
+import type { Product, ProductSort, ProductStock, ProductType } from "../../app/types/products";
 import "server-only";
 
 export type { ProductSort } from "../../app/types/products";
@@ -7,10 +7,16 @@ export type { ProductSort } from "../../app/types/products";
 type ProductQuery = {
   sort?: ProductSort;
   available?: boolean;
+  stock?: ProductStock;
   all?: boolean;
   type?: ProductType;
 };
 const sortFunctions: Record<ProductSort, (a: Product, b: Product) => number> = {
+  name: (a, b) => Buffer.compare(
+    Buffer.from(a.name.normalize("NFC").trim().toLowerCase(), "utf8"),
+    Buffer.from(b.name.normalize("NFC").trim().toLowerCase(), "utf8"),
+  ) || a.id - b.id,
+  newest: (a, b) => Date.parse(b.date) - Date.parse(a.date) || a.id - b.id,
   nameAsc: (a, b) => a.name.localeCompare(b.name),
   nameDesc: (a, b) => b.name.localeCompare(a.name),
   priceAsc: (a, b) => a.price - b.price,
@@ -30,7 +36,9 @@ export function listProducts(options?: ProductQuery): Promise<Product[]> {
 function filterProducts(options: ProductQuery, products: Product[]): Product[] {
   return products.filter((product) => {
     return (
-      (!options.available || product.amount > 0) &&
+      (options.stock === "available" ? product.amount > 0
+        : options.stock === "unavailable" ? product.amount === 0
+        : options.stock === "all" || !options.available || product.amount > 0) &&
       (options.type === undefined || options.type === product.type)
     );
   });

@@ -125,7 +125,7 @@ export async function withBrowser(workspace, run) {
     };
     const navigate = async (route, ready) => {
       await send("Page.navigate", { url: base + route });
-      await waitFor(() => evaluate(`location.href === ${JSON.stringify(base + route)} && !!document.body && (${ready})`), route);
+      await waitFor(() => evaluate(`location.href === ${JSON.stringify(base + route)} && document.readyState === 'complete' && !!document.body && (${ready})`), route);
     };
     await run({ base, send, evaluate, navigate, logs: () => logs, requests: debuggerClient.requests });
   } finally {
@@ -145,7 +145,7 @@ async function verifyNavigation() {
   const byId = [...products].sort((a, b) => a.id - b.id);
   const manifest = JSON.parse(await readFile(path.join(root, ".next/prerender-manifest.json"), "utf8"));
   const prerendered = Object.keys(manifest.routes).filter((route) => /^\/product-list\/\d+$/.test(route)).sort();
-  assert.deepEqual(prerendered, byId.slice(0, 3).map(p => `/product-list/${p.id}`).sort());
+  assert.deepEqual(prerendered, []);
   const onDemandProduct = byId[3];
   assert.ok(onDemandProduct, "Prerender checks need at least four products.");
   assert.ok(!prerendered.includes(`/product-list/${onDemandProduct.id}`));
@@ -157,7 +157,7 @@ async function verifyNavigation() {
       assert.ok(html.includes(product.code));
       assert.ok(html.includes(`<title>${product.name}</title>`));
     }
-    console.log("PASS: build prerenders exactly three selected products; a valid ID outside that subset still loads with metadata.");
+    console.log("PASS: no product is prerendered; product pages and metadata read the database at request time.");
     const catalogueReady = `!!document.querySelector('.product-list-controls select') &&
       Object.keys(document.querySelector('.product-list-controls select')).some(key => key.startsWith('__reactProps'))`;
     const current = () => evaluate(`({

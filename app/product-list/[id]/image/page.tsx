@@ -1,16 +1,19 @@
 import Link from "next/link";
 import { getProductByRouteId } from "@/lib/products/product-details";
 import ProductImage from "@/app/components/ProductImage";
+import { connection } from "next/server";
 
 type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props) {
+  await connection();
   const { id } = await params;
   const product = await getProductByRouteId(id);
   return { title: `${product.name} — Image` };
 }
 
 export default async function ProductImagePage({ params }: Props) {
+  await connection();
   const { id } = await params;
   const product = await getProductByRouteId(id);
   return (

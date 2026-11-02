@@ -2,6 +2,7 @@ import { parseCatalogQuery, type CatalogSearchParams } from "@/lib/products/cata
 import type { Metadata } from "next";
 import ProductList from "@/app/components/ProductList";
 import { listProducts } from "@/lib/products/product-repo";
+import { connection } from "next/server";
 
 export const metadata: Metadata = { title: "Product List" };
 
@@ -10,6 +11,7 @@ export default async function ProductListPage({
 }: {
   searchParams: Promise<CatalogSearchParams>;
 }) {
+  await connection();
   const { criteria, warnings } = parseCatalogQuery(await searchParams);
   const products = await listProducts(criteria);
   return <ProductList {...criteria} products={products} warnings={warnings} />;

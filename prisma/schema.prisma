@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Category {
+  code     String    @id
+  name     String
+  products Product[]
+}
+
+model Product {
+  id           Int         @id
+  code         String      @unique
+  name         String
+  description  String
+  image        String
+  price        Int
+  amount       Int
+  date         DateTime    @db.Timestamptz(3)
+  nameSortKey  String      @db.Text
+  categoryCode String
+  category     Category    @relation(fields: [categoryCode], references: [code], onDelete: Restrict, onUpdate: Cascade)
+  orderItems   OrderItem[]
+
+  @@index([categoryCode], map: "product_category_code_idx")
+}
+
+model User {
+  id            String   @id
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @db.Timestamptz(3)
+  orders        Order[]
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  CANCELLED
+}
+
+model Order {
+  id          String      @id
+  number      String      @unique
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  status      OrderStatus
+  orderedAt   DateTime    @db.Timestamptz(3)
+  totalGrosze BigInt
+  items       OrderItem[]
+
+  @@index([userId, orderedAt])
+}
+
+model OrderItem {
+  id              String   @id
+  orderId         String
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  lineNumber      Int
+  productId       Int?
+  product         Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  nameSnapshot    String
+  codeSnapshot    String
+  quantity        Int
+  unitPriceGrosze BigInt
+
+  @@unique([orderId, lineNumber])
+  @@index([productId])
+}

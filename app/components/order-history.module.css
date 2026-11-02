@@ -1,0 +1,29 @@
+@reference "tailwindcss";
+
+.panel { @apply rounded-2xl bg-white p-5 font-sans text-slate-900 shadow-sm sm:p-8; }
+.eyebrow { @apply mb-2 text-xs font-semibold uppercase tracking-widest text-indigo-700; }
+.heading { @apply mb-3 text-3xl font-bold tracking-tight sm:text-4xl; }
+.intro { @apply max-w-2xl text-sm leading-relaxed text-slate-600; }
+.profile { @apply my-6 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-indigo-50 px-4 py-3 text-sm; }
+.profileName { @apply font-semibold text-indigo-950; }
+.muted { @apply text-xs leading-relaxed text-slate-500; }
+.orders { @apply m-0 grid list-none gap-6 p-0; }
+.order { @apply min-w-0 overflow-hidden rounded-xl border border-slate-200; }
+.orderHeader { @apply flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-4 sm:px-5; }
+.number { @apply mb-1 wrap-anywhere text-base font-bold; }
+.status { @apply rounded-full px-3 py-1 text-xs font-semibold; }
+.PENDING { @apply bg-amber-100 text-amber-900; }
+.PAID { @apply bg-blue-100 text-blue-900; }
+.SHIPPED { @apply bg-emerald-100 text-emerald-900; }
+.CANCELLED { @apply bg-slate-200 text-slate-700; }
+.items { @apply divide-y divide-slate-100 px-4 sm:px-5; }
+.item { @apply grid min-w-0 gap-4 py-5 sm:grid-cols-2 sm:items-center; }
+.productName { @apply mb-1 wrap-anywhere text-sm font-semibold; }
+.productLink { @apply text-indigo-700 underline decoration-indigo-200 underline-offset-4 hover:decoration-indigo-700 focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-indigo-700; }
+.facts { @apply grid grid-cols-3 gap-2 text-sm; }
+.label { @apply mb-1 text-xs text-slate-500; }
+.value { @apply m-0 wrap-anywhere font-semibold; }
+.total { @apply flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-slate-50 px-4 py-4 text-sm font-semibold sm:px-5; }
+.totalValue { @apply text-lg font-bold text-indigo-950; }
+.empty { @apply rounded-xl border border-dashed border-slate-300 p-6 text-slate-600; }
+.catalogueLink { @apply mt-6 inline-flex font-semibold text-indigo-700 underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-indigo-700; }

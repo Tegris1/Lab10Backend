@@ -1,0 +1,90 @@
+[
+  {
+    "code": "BASELINE08",
+    "name": " alpha ",
+    "type": "cpu",
+    "price": 100,
+    "amount": 0,
+    "description": "Catalogue sorting baseline fixture",
+    "date": "2026-10-02T10:00:00.123Z",
+    "image": "/img/cpu.jpg",
+    "id": 8
+  },
+  {
+    "code": "BASELINE02",
+    "name": "Alpha",
+    "type": "gpu",
+    "price": 100,
+    "amount": 1,
+    "description": "Catalogue sorting baseline fixture",
+    "date": "2026-10-02T12:00:00.123+02:00",
+    "image": "/img/gpu.jpg",
+    "id": 2
+  },
+  {
+    "code": "BASELINE07",
+    "name": "ALPHA",
+    "type": "cpu",
+    "price": 100,
+    "amount": 2,
+    "description": "Catalogue sorting baseline fixture",
+    "date": "2026-10-02T10:00:00.124Z",
+    "image": "/img/cpu.jpg",
+    "id": 7
+  },
+  {
+    "code": "BASELINE03",
+    "name": "Zebra",
+    "type": "ram",
+    "price": 100,
+    "amount": 0,
+    "description": "Catalogue sorting baseline fixture",
+    "date": "2026-10-01T10:00:00.123Z",
+    "image": "/img/ram.jpg",
+    "id": 3
+  },
+  {
+    "code": "BASELINE06",
+    "name": "Ąlpha",
+    "type": "disk",
+    "price": 100,
+    "amount": 3,
+    "description": "Catalogue sorting baseline fixture",
+    "date": "2026-10-01T10:00:00.124Z",
+    "image": "/img/disk.jpg",
+    "id": 6
+  },
+  {
+    "code": "BASELINE01",
+    "name": "Éclair",
+    "type": "gpu",
+    "price": 100,
+    "amount": 0,
+    "description": "Catalogue sorting baseline fixture",
+    "date": "2026-10-01T10:00:00.123Z",
+    "image": "/img/gpu.jpg",
+    "id": 1
+  },
+  {
+    "code": "BASELINE05",
+    "name": " ÉCLAIR ",
+    "type": "ram",
+    "price": 100,
+    "amount": 1,
+    "description": "Catalogue sorting baseline fixture",
+    "date": "2026-10-01T10:00:00.123Z",
+    "image": "/img/ram.jpg",
+    "id": 5
+  },
+  {
+    "code": "BASELINE04",
+    "name": "Łódź",
+    "type": "disk",
+    "price": 100,
+    "amount": 0,
+    "description": "Catalogue sorting baseline fixture",
+    "date": "2026-10-01T10:00:00.122Z",
+    "image": "/img/disk.jpg",
+    "id": 4
+  }
+]

@@ -9,7 +9,6 @@ const sample = products.find(product => product.id === 1);
 assert.ok(sample);
 const productPath = `/product-list/${sample.id}`;
 const imagePath = `${productPath}/image`;
-const addedPath = ''
 await withBrowser(root, async ({ send, evaluate, navigate }) => {
   const heading = (text) => `document.querySelector('main h1')?.textContent === ${JSON.stringify(text)}`;
   for (const base of ["/catalog", "/catalog/required"]) {

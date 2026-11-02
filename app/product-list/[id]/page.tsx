@@ -1,47 +1,19 @@
-import { findProductById, listProducts } from "@/lib/products/product-repo";
-import { notFound } from "next/navigation";
-import ProductDetails from "@/app/components/ProductDetails";
-import { parseProductId } from "@/lib/products/product-id";
+import { connection } from "next/server";
 import type { Metadata } from "next";
-import { cache } from "react";
+import ProductDetails from "@/app/components/ProductDetails";
+import { getProductByRouteId } from "@/lib/products/product-details";
 
-type PageProps = {
-  params: Promise<{ id: string }>;
-};
-
-// Lab 07 experiment: prerender a small subset; other valid IDs render on demand.
-// Before Lab 08, remove this experiment and require fresh database reads per request.
-export const dynamicParams = true;
-
-export async function generateStaticParams(): Promise<{ id: string }[]> {
-  const products = await listProducts();
-  return [...products]
-    .sort((a, b) => a.id - b.id)
-    .slice(0, 3)
-    .map((product) => ({ id: String(product.id) }));
-}
-
-const getProductDetails = cache(async (id: string) => {
-  const productId = parseProductId(id);
-  if (productId === null) notFound();
-
-  const productDetails = await findProductById(productId);
-
-  if (!productDetails) {
-    notFound();
-  }
-
-  return productDetails;
-});
+type PageProps = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  await connection();
   const { id } = await params;
-  const product = await getProductDetails(id);
+  const product = await getProductByRouteId(id);
   return { title: product.name, description: product.description };
 }
 
 export default async function Page({ params }: PageProps) {
+  await connection();
   const { id } = await params;
-  const productDetails = await getProductDetails(id);
-  return <ProductDetails product={productDetails} />;
+  return <ProductDetails product={await getProductByRouteId(id)} />;
 }

@@ -10,7 +10,7 @@ export default function ProductDetails({ product, backHref = "/product-list" }: 
   backHref?: string;
 }) {
   const price = new Intl.NumberFormat("pl-PL", { style: "currency", currency: "PLN" }).format(product.price / 100);
-  const date = new Intl.DateTimeFormat("pl-PL", { dateStyle: "long", timeZone: "Europe/Warsaw" }).format(new Date(product.date));
+  const date = product.date;
   const fields = [
     ["Product ID", product.id], ["Code", product.code], ["Category", product.type.toUpperCase()],
     ["Price", price], ["Stock", `${product.amount > 0 ? "In stock" : "Out of stock"} — ${product.amount} units`],

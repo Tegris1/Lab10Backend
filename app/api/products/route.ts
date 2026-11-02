@@ -2,6 +2,8 @@ import type { ProductSort, ProductStock, ProductType } from "@/app/types/product
 import { listProducts } from "@/lib/products/product-repo";
 
 const productTypes: ProductType[] = ["cpu", "gpu", "ram", "disk"];
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 const productSorts: ProductSort[] = [
   "name",
   "newest",
@@ -77,7 +79,7 @@ export async function GET(request: Request) {
       ...(requestedAvailable === null ? {} : { available: requestedAvailable === "true" }),
       ...(stock === undefined ? {} : { stock }),
     });
-    return Response.json(products);
+    return Response.json(products, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("Nie udało się odczytać katalogu produktów:", error);
     return Response.json(

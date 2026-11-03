@@ -124,8 +124,10 @@ model Order {
   status      OrderStatus
   orderedAt   DateTime    @db.Timestamptz(3)
   totalGrosze BigInt
+  requestKey  String?
   items       OrderItem[]
 
+  @@unique([userId, requestKey])
   @@index([userId, orderedAt])
 }
 

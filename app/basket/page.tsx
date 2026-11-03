@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import Image from "next/image";
 import { connection } from "next/server";
@@ -6,6 +7,7 @@ import { getMyCart } from "@/lib/cart/my-cart";
 import { getCurrentSession } from "@/lib/auth/session";
 import { SignInButton } from "@/app/components/AuthControls";
 import { BasketItemControls } from "@/app/components/BasketControls";
+import PlaceOrderButton from "@/app/components/PlaceOrderButton";
 import { formatGrosze } from "@/lib/orders/money";
 import styles from "@/app/components/order-history.module.css";
 
@@ -71,6 +73,7 @@ export default async function Basket() {
             <strong className={styles.totalValue} data-cart-total>{formatGrosze(cart?.totalGrosze ?? "0")}</strong></footer>
         </div>
       )}
+      {items.length > 0 && <PlaceOrderButton requestKey={randomUUID()} available={items.every(item => item.quantity <= item.amount)} />}
       <Link className={styles.catalogueLink} href="/product-list">Browse products →</Link>
     </main>
   );

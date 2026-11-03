@@ -2,6 +2,7 @@
 
 .addForm { @apply mt-4 grid justify-items-start gap-2 font-sans text-sm; }
 .itemForm { @apply rounded-lg bg-slate-50 p-3 font-sans text-sm; }
+.checkoutForm { @apply mt-6 rounded-xl border border-slate-200 p-4 font-sans text-sm; }
 .fields { @apply flex flex-wrap items-end gap-2; }
 .label { @apply mb-1 block text-xs font-medium text-slate-600; }
 .input { @apply min-h-11 w-20 rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 disabled:opacity-60 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-indigo-700; }

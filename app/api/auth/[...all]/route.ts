@@ -2,6 +2,7 @@ import { toNextJsHandler } from "better-auth/next-js";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db/prisma";
 import { AUTH_BASE_PATH } from "@/lib/auth-paths";
+import { logServerError } from "@/lib/logging";
 
 export const runtime = "nodejs";
 const handlers = toNextJsHandler(auth);
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
     }
     return response;
   } catch (error) {
-    console.error("Sign-out could not be confirmed.", error);
+    logServerError("auth.sign-out", error);
     return signOutUnavailable();
   }
 }

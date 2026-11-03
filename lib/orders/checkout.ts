@@ -3,6 +3,7 @@ import { requireSession, AuthenticationRequiredError } from "../auth/session";
 import { prisma } from "../db/prisma";
 import { CheckoutError, parseCheckoutInput, type CheckoutFailure } from "./checkout-input";
 import { createCheckoutWriter } from "./prisma-checkout";
+import { logServerError } from "../logging";
 
 const writer = createCheckoutWriter(prisma);
 type CheckoutResult = { ok: true; orderId: string; productIds: number[] } | CheckoutFailure;
@@ -17,7 +18,7 @@ export async function checkoutMyCart(input: unknown): Promise<CheckoutResult> {
       ok: false, code: "AUTH_REQUIRED", message: "Sign in to place an order.",
     };
     if (error instanceof CheckoutError) return { ok: false, code: error.code, message: error.message };
-    console.error("Checkout failed.", error);
+    logServerError("order.checkout", error);
     return { ok: false, code: "UNAVAILABLE", message: "Could not confirm your order. Please retry using this order button." };
   }
 }

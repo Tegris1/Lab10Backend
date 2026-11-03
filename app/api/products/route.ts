@@ -1,5 +1,6 @@
 import type { ProductSort, ProductStock, ProductType } from "@/app/types/products";
 import { listProducts } from "@/lib/products/product-repo";
+import { logServerError } from "@/lib/logging";
 
 const productTypes: ProductType[] = ["cpu", "gpu", "ram", "disk"];
 export const runtime = "nodejs";
@@ -81,7 +82,7 @@ export async function GET(request: Request) {
     });
     return Response.json(products, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
-    console.error("Nie udało się odczytać katalogu produktów:", error);
+    logServerError("products.list", error);
     return Response.json(
       { error: "Nie udało się wczytać produktów. Spróbuj ponownie później." },
       { status: 500 },

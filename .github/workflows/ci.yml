@@ -1,0 +1,64 @@
+name: Lab 10 checks
+
+on:
+  push:
+    branches: [main, lab10]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Lint, tests and production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: shop_lab08_ci
+          POSTGRES_USER: shop_lab08
+          POSTGRES_PASSWORD: ci-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U shop_lab08 -d shop_lab08_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    # All values are fictional and scoped to this ephemeral PostgreSQL service.
+    # PR code never receives production secrets or a production database URL.
+    env:
+      DATABASE_URL: postgresql://shop_lab08:ci-only-password@localhost:5432/shop_lab08_ci
+      TEST_DATABASE_URL: postgresql://shop_lab08:ci-only-password@localhost:5432/shop_lab08_test
+      BETTER_AUTH_URL: http://localhost:3000
+      BETTER_AUTH_SECRET: ci-only-fictional-auth-secret-at-least-32-characters
+      GITHUB_CLIENT_ID: fictional-ci-client-id
+      GITHUB_CLIENT_SECRET: fictional-ci-client-secret
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - name: Install the locked dependencies
+        run: npm ci --include=dev
+      - name: Validate the Prisma schema
+        run: npm run db:validate
+      - name: Generate client, lint, test and build
+        run: npm run ci:check
+      - name: Record the verified revision
+        if: success()
+        run: |
+          echo "Verified checkout: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+          echo "This workflow does not publish or migrate Production." >> "$GITHUB_STEP_SUMMARY"

@@ -1,18 +1,20 @@
 import "server-only";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
+import { attachDatabasePool } from "@vercel/functions";
 import { PrismaClient } from "@/lib/generated/prisma/client";
+import { getDatabasePoolConfig } from "./environment";
+import { logServerError } from "../logging";
 
 const globalForPrisma = globalThis as unknown as {
   shopPrisma?: PrismaClient;
 };
 
 function createPrismaClient(): PrismaClient {
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    throw new Error("DATABASE_URL is required for the database connection.");
-  }
-
-  const adapter = new PrismaPg({ connectionString, connectionTimeoutMillis: 5000 });
+  const pool = new Pool(getDatabasePoolConfig(process.env));
+  pool.on("error", error => logServerError("database.pool", error));
+  if (process.env.VERCEL === "1") attachDatabasePool(pool);
+  const adapter = new PrismaPg(pool);
   return new PrismaClient({ adapter });
 }
 

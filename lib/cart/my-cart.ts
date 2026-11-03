@@ -4,6 +4,7 @@ import { prisma } from "../db/prisma";
 import { findCartForUser } from "./cart-repo";
 import { CartOperationError, parseAddProduct, parseRemoveItem, parseSetQuantity, type CartErrorCode, type CartField } from "./cart-input";
 import { createCartWriter } from "./prisma-cart-write";
+import { logServerError } from "../logging";
 
 export type CartMutationResult =
   | { ok: true; itemId: string }
@@ -28,7 +29,7 @@ async function mutate(operation: (userId: string) => Promise<{ itemId: string }>
     if (error instanceof CartOperationError) {
       return { ok: false, code: error.code, message: error.message, field: error.field };
     }
-    console.error("Basket operation failed.", error);
+    logServerError("basket.mutate", error);
     return { ok: false, code: "UNAVAILABLE", message: "Could not update your basket. Please try again.", field: "form" };
   }
 }

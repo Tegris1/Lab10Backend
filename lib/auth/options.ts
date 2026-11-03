@@ -1,6 +1,7 @@
 import type { BetterAuthOptions } from "better-auth";
 import { AUTH_BASE_PATH } from "../auth-paths";
 import type { AuthEnvironment } from "./environment";
+import { logServerError } from "../logging";
 
 // Shared server/CLI settings. The runtime will supply the existing Prisma adapter.
 export function createAuthOptions(environment: AuthEnvironment) {
@@ -20,5 +21,9 @@ export function createAuthOptions(environment: AuthEnvironment) {
     },
     advanced: { disableCSRFCheck: false, disableOriginCheck: false },
     onAPIError: { errorURL: "/sign-in" },
+    logger: {
+      level: "error",
+      log: (_level, _message, ...args) => logServerError("auth.library", args.find(value => value instanceof Error)),
+    },
   } satisfies BetterAuthOptions;
 }

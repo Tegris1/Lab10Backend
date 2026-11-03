@@ -1,3 +1,5 @@
+import { isLocalDatabaseHost, parseDatabaseURL } from "../db/environment";
+
 export type AuthEnvironment = {
   secret: string;
   baseURL: string;
@@ -28,16 +30,14 @@ export function parseAuthEnvironment(input: Record<string, string | undefined>):
     baseURL.pathname !== "/" || baseURL.search || baseURL.hash) {
     throw new Error("BETTER_AUTH_URL must be an HTTP or HTTPS origin without credentials, path, query or fragment.");
   }
+  if (input.VERCEL_ENV === "production" && (baseURL.protocol !== "https:" || isLocalDatabaseHost(baseURL.hostname))) {
+    throw new Error("BETTER_AUTH_URL must be a public HTTPS origin for Production.");
+  }
 
   const githubClientId = required("GITHUB_CLIENT_ID");
   const githubClientSecret = required("GITHUB_CLIENT_SECRET");
   const databaseURL = required("DATABASE_URL");
-  let database: URL;
-  try { database = new URL(databaseURL); }
-  catch { throw new Error("DATABASE_URL must be a PostgreSQL connection URL."); }
-  if (!["postgres:", "postgresql:"].includes(database.protocol) || !database.hostname || database.pathname.length < 2) {
-    throw new Error("DATABASE_URL must be a PostgreSQL connection URL with a database name.");
-  }
+  parseDatabaseURL(databaseURL, input.VERCEL_ENV === "production");
 
   return { secret, baseURL: baseURL.origin, githubClientId, githubClientSecret, databaseURL };
 }

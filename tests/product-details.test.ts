@@ -9,6 +9,7 @@ const { findProductById, listProducts, notFound } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/products/product-repo", () => ({ findProductById, listProducts }));
+vi.mock("@/app/basket/actions", () => ({ addProduct: vi.fn(), setQuantity: vi.fn(), removeItem: vi.fn() }));
 vi.mock("next/navigation", () => ({ notFound }));
 vi.mock("next/server", () => ({ connection: vi.fn(async () => {}) }));
 

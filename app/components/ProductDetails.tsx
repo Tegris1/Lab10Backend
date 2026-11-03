@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Product } from "@/app/types/products";
 import ProductNavigation, { ProductPageLink } from "./ProductNavigation";
 import styles from "./product-details.module.css";
+import { AddToBasketButton } from "./BasketControls";
 
 export default function ProductDetails({ product, backHref = "/product-list" }: {
   product: Product;
@@ -40,6 +41,7 @@ export default function ProductDetails({ product, backHref = "/product-list" }: 
             </div>
           ))}
         </dl>
+        <AddToBasketButton productId={product.id} name={product.name} available={product.amount > 0} />
         <ProductPageLink href={backHref} view="list"
           className={styles.backLink}>
           ← Back to product list

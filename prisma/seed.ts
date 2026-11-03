@@ -4,7 +4,6 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../lib/generated/prisma/client";
 import { ProductValidationError } from "../lib/products/product-validation";
 import { seedCatalog } from "./seed-catalog";
-import { seedOrderHistory } from "./seed-order-history";
 
 async function main() {
   const connectionString = process.env.DATABASE_URL;
@@ -15,9 +14,7 @@ async function main() {
   });
   try {
     await seedCatalog(client, input);
-    console.log("Seeded four categories and 100 products; unrelated records preserved.");
-    await seedOrderHistory(client);
-    console.log("Seeded the fictional profile and four orders; existing historical snapshots preserved.");
+    console.log("Seeded four categories and 100 products; users, sessions, baskets and orders preserved.");
   } finally {
     await client.$disconnect();
   }
@@ -26,6 +23,6 @@ async function main() {
 main().catch(error => {
   console.error(error instanceof ProductValidationError
     ? `Catalogue validation failed: ${error.message}`
-    : "Database seed failed. Check the JSON fixture, migrations and conflicting catalogue or order-history identities.");
+    : "Database seed failed. Check the JSON fixture, migrations and conflicting catalogue identities.");
   process.exitCode = 1;
 });

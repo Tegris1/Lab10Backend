@@ -1,7 +1,5 @@
-export default function Basket() {
-  return (
-    <div>
-      <p>Basket</p>
-    </div>
-  );
+import { permanentRedirect } from "next/navigation";
+
+export default function LegacyBasket() {
+  permanentRedirect("/basket");
 }

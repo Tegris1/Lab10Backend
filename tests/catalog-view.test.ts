@@ -7,6 +7,7 @@ const { getProductByRouteId, listProducts, notFound } = vi.hoisted(() => ({
   notFound: vi.fn((): never => { throw new Error("NOT_FOUND"); }),
 }));
 vi.mock("@/lib/products/product-details", () => ({ getProductByRouteId }));
+vi.mock("@/app/basket/actions", () => ({ addProduct: vi.fn(), setQuantity: vi.fn(), removeItem: vi.fn() }));
 vi.mock("@/lib/products/product-repo", () => ({ listProducts }));
 vi.mock("next/navigation", () => ({ notFound }));
 

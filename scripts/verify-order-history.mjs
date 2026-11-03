@@ -50,6 +50,8 @@ try {
     assert.ok((await evaluate(`document.querySelector('${historicalItem}').textContent`)).includes("R3SMC193Q8"));
     assert.ok(!(await evaluate("document.querySelector('[data-order-history]').textContent")).includes(changedName));
     await assertTotals();
+    // Lab 09 protects products in active baskets. Remove the test basket references first.
+    await database.query('DELETE FROM "CartItem" WHERE "productId" = 1');
     await database.query('DELETE FROM "Product" WHERE "id" = 1');
     await visitHistory();
     assert.ok((await evaluate(`document.querySelector('${historicalItem}').textContent`)).includes("No longer in catalogue"));

@@ -1,0 +1,17 @@
+@reference "tailwindcss";
+
+.addForm { @apply mt-4 grid justify-items-start gap-2 font-sans text-sm; }
+.itemForm { @apply rounded-lg bg-slate-50 p-3 font-sans text-sm; }
+.fields { @apply flex flex-wrap items-end gap-2; }
+.label { @apply mb-1 block text-xs font-medium text-slate-600; }
+.input { @apply min-h-11 w-20 rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 disabled:opacity-60 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-indigo-700; }
+.input[aria-invalid="true"] { @apply border-red-700; }
+.primary { @apply min-h-11 cursor-pointer rounded-lg border border-indigo-700 bg-indigo-700 px-4 py-2 font-sans text-sm font-semibold text-white hover:bg-indigo-800 disabled:cursor-not-allowed disabled:opacity-55 focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-indigo-700; }
+.remove { @apply min-h-11 cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2 font-semibold text-slate-700 hover:border-red-700 hover:text-red-800 disabled:cursor-wait disabled:opacity-55 focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-indigo-700; }
+.hint { @apply mt-2 text-xs leading-relaxed text-slate-600; }
+.error { @apply mt-2 text-sm leading-relaxed text-red-800; }
+.success { @apply text-sm text-emerald-800; }
+.link { @apply font-semibold text-indigo-700 underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-indigo-700; }
+.pending { @apply block text-xs text-slate-600; }
+.pending:empty { @apply hidden; }
+.srOnly { @apply sr-only; }

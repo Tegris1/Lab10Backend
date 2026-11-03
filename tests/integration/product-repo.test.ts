@@ -23,6 +23,7 @@ beforeAll(async () => {
 });
 beforeEach(async () => {
   // The verified unique test database belongs exclusively to this run.
+  await client.cart.deleteMany();
   await client.product.deleteMany();
   await seedCatalog(client, source);
 });

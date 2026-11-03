@@ -81,7 +81,18 @@ async function connectDebugger(url) {
   };
 }
 
-// Uses a disposable browser profile and a production server. Never starts the user's normal profile.
+/**
+ * Uses a disposable browser profile and a production server.
+ * @param {string} workspace
+ * @param {(browser: {
+ *   base: string,
+ *   navigate: (route: string, ready: string) => Promise<void>,
+ *   evaluate: (expression: string) => Promise<unknown>,
+ *   send: (method: string, params?: Record<string, unknown>) => Promise<unknown>,
+ *   logs: () => string,
+ *   requests: () => { request: { url: string, method: string, headers: Record<string, string>, postData?: string } }[],
+ * }) => Promise<void>} run
+ */
 export async function withBrowser(workspace, run) {
   const executable = browserExecutable();
   const port = await unusedPort();
@@ -92,7 +103,7 @@ export async function withBrowser(workspace, run) {
   let debuggerClient;
   const server = spawn(process.execPath, [
     path.join(workspace, "node_modules/next/dist/bin/next"), "start", "--port", String(port),
-  ], { cwd: workspace, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
+  ], { cwd: workspace, env: { ...process.env, BETTER_AUTH_URL: base }, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
   for (const stream of [server.stdout, server.stderr]) stream.on("data", (data) => { logs += data; });
   try {
     await waitFor(async () => {

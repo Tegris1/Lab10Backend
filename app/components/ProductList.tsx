@@ -3,6 +3,7 @@ import type { Product, CatalogSort, ProductStock, ProductType } from "@/app/type
 import SortRadio from "./SortRadio";
 import ProductFilters from "./ProductFilters";
 import CategoryIcon from "./CategoryIcon";
+import { AddToBasketButton } from "./BasketControls";
 import "./product-list.css";
 import ProductNavigation, { ProductPageLink } from "./ProductNavigation";
 
@@ -83,6 +84,7 @@ export default function ProductList({
                     className="mt-3 w-fit font-semibold text-indigo-700 underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-indigo-700">
                     to product details
                   </ProductPageLink>
+                  <AddToBasketButton productId={product.id} name={product.name} available={product.amount > 0} />
                 </article>
               </li>
             ))}

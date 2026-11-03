@@ -1,0 +1,12 @@
+@reference "tailwindcss";
+
+.controls { @apply flex w-full flex-wrap items-center justify-end gap-3 font-sans text-sm max-sm:justify-center; }
+.button { @apply cursor-pointer rounded-lg bg-slate-900 px-4 py-2 font-sans text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-wait disabled:opacity-60 focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-slate-900; }
+.secondaryButton { @apply cursor-pointer rounded-lg border border-slate-400 bg-white px-4 py-2 font-sans text-sm font-semibold text-slate-900 hover:bg-slate-100 disabled:cursor-wait disabled:opacity-60 focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-slate-900; }
+.sessionControls { @apply max-w-md text-right max-sm:text-center; }
+.buttons { @apply flex flex-wrap justify-end gap-2 max-sm:justify-center; }
+.hint { @apply mt-2 text-xs leading-relaxed text-slate-600; }
+.identity { @apply min-w-0 wrap-anywhere text-slate-950; }
+.email { @apply ml-2 inline-block wrap-anywhere text-xs; }
+.message { @apply mt-2 max-w-md font-sans text-sm; }
+.srOnly { @apply sr-only; }

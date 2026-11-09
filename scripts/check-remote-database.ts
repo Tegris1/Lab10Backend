@@ -109,7 +109,7 @@ async function main() {
   try { target = parseDatabaseURL(process.env.DATABASE_URL, true); }
   catch (error) { throw new PreflightError(error instanceof Error ? error.message : "Invalid DATABASE_URL."); }
   console.log(`Checking remote target ${target.hostname}${target.pathname}; credentials omitted. Role purpose: ${values.role}.`);
-  const client = new Client({ connectionString: process.env.DATABASE_URL, connectionTimeoutMillis: 10000, query_timeout: 10000, application_name: "shop-release-preflight" });
+  const client = new Client({ connectionString: target.toString(), connectionTimeoutMillis: 10000, query_timeout: 10000, application_name: "shop-release-preflight" });
   try {
     await client.connect();
     await client.query("BEGIN READ ONLY");

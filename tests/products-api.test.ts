@@ -56,6 +56,9 @@ describe("GET /api/products", () => {
     const body = await response.text();
     expect(JSON.parse(body)).toEqual({ error: expect.any(String) });
     expect(body).not.toContain(failure.message);
-    expect(log).toHaveBeenCalledWith(expect.any(String), failure);
+    expect(log).toHaveBeenCalledExactlyOnceWith(JSON.stringify({
+      operation: "products.list", type: "Error", code: "UNCLASSIFIED",
+    }));
+    expect(JSON.stringify(log.mock.calls)).not.toContain(failure.message);
   });
 });

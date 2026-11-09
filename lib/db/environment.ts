@@ -10,6 +10,9 @@ export function parseDatabaseURL(value: string | undefined, requireRemote = fals
   let url: URL;
   try { url = new URL(value); }
   catch { throw new Error("DATABASE_URL must be a PostgreSQL connection URL."); }
+  if (["prisma:", "prisma+postgres:"].includes(url.protocol)) {
+    throw new Error("DATABASE_URL must use the PostgreSQL TCP connection string (postgres:// or postgresql://), not a Prisma Accelerate URL. Copy the pooled connection string from Prisma Console.");
+  }
   if (value !== value.trim() || /[\u0000-\u001f\u007f]/u.test(value) ||
     !["postgres:", "postgresql:"].includes(url.protocol) || !url.hostname || url.pathname.length < 2 || url.hash) {
     throw new Error("DATABASE_URL must be a PostgreSQL connection URL with a database name.");
@@ -19,10 +22,13 @@ export function parseDatabaseURL(value: string | undefined, requireRemote = fals
   }
   const local = isLocalDatabaseHost(url.hostname);
   if (requireRemote && local) throw new Error("DATABASE_URL must point to a remote database for Production.");
-  if (!local && (url.searchParams.getAll("sslmode").length !== 1 || url.searchParams.get("sslmode") !== "verify-full" ||
+  if (!local && (url.searchParams.getAll("sslmode").length !== 1 || !["require", "verify-full"].includes(url.searchParams.get("sslmode") ?? "") ||
     url.searchParams.has("ssl") || url.searchParams.has("uselibpqcompat"))) {
-    throw new Error("Remote DATABASE_URL must use sslmode=verify-full without SSL overrides.");
+    throw new Error("Remote DATABASE_URL must use sslmode=require or sslmode=verify-full without SSL overrides.");
   }
+  // Prisma Postgres supplies sslmode=require. Keep full certificate/hostname
+  // verification explicit, including if pg changes its interpretation of require.
+  if (!local) url.searchParams.set("sslmode", "verify-full");
   return url;
 }
 
@@ -37,9 +43,9 @@ function integerSetting(input: Record<string, string | undefined>, name: string,
 }
 
 export function getDatabasePoolConfig(input: Record<string, string | undefined>): PoolConfig {
-  parseDatabaseURL(input.DATABASE_URL, input.VERCEL_ENV === "production");
+  const url = parseDatabaseURL(input.DATABASE_URL, input.VERCEL_ENV === "production");
   return {
-    connectionString: input.DATABASE_URL,
+    connectionString: url.toString(),
     min: 0,
     max: integerSetting(input, "PG_POOL_MAX", input.VERCEL === "1" ? 3 : 5, 20),
     idleTimeoutMillis: integerSetting(input, "PG_IDLE_TIMEOUT_MS", 5000, 60000),

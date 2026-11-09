@@ -69,6 +69,14 @@ describe("auth environment validation", () => {
     expect(() => parseAuthEnvironment({ ...fixture, GITHUB_CLIENT_SECRET: undefined,
       NEXT_PUBLIC_GITHUB_CLIENT_SECRET: fixture.GITHUB_CLIENT_SECRET })).toThrow("GITHUB_CLIENT_SECRET is required");
   });
+
+  it("accepts the provider's Prisma Postgres connection string in Production", () => {
+    const environment = parseAuthEnvironment({ ...fixture, VERCEL_ENV: "production",
+      BETTER_AUTH_URL: "https://shop.example.test",
+      DATABASE_URL: "postgres://fictional:password@pooled.db.prisma.io:5432/postgres?sslmode=require",
+    });
+    expect(environment.baseURL).toBe("https://shop.example.test");
+  });
 });
 
 describe("GitHub OAuth configuration", () => {

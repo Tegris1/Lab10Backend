@@ -28,7 +28,7 @@ Store actual values in Vercel's **Production** environment and in protected loca
 
 | Variable | Purpose |
 | --- | --- |
-| `DATABASE_URL` | Runtime-role PostgreSQL URL, normally the provider's pooled endpoint; remote URLs require `sslmode=verify-full` |
+| `DATABASE_URL` | Runtime-role PostgreSQL TCP URL, normally the provider's pooled endpoint; remote URLs accept `sslmode=require` or `sslmode=verify-full`. The app normalizes `require` to `verify-full`. |
 | `BETTER_AUTH_URL` | Stable Production HTTPS origin, with no path/query; never a changing Preview URL |
 | `BETTER_AUTH_SECRET` | Separate random Production secret of at least 32 characters; keep stable across releases to preserve sessions |
 | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | A separate Production GitHub **OAuth App** |
@@ -123,6 +123,26 @@ Local implementation verification completed: the working-copy lint/build passed,
 If the initial Vercel setup is already deploying older code, stop relying on that deployment's result. The code here must be committed/pushed and deployed at its own verified revision. Green GitHub Actions alone cannot stop a separate Vercel release; the manual release policy is intentional.
 
 ## Diagnostics
+
+### Prisma Postgres: catalogue and GitHub sign-in both fail
+
+Both features use `lib/db/prisma.ts`. Successful table creation proves the migration connection worked; it does not prove that the deployed application's connection works or that products were imported.
+
+1. In Prisma Console, open the existing database's connection settings and copy its **pooled PostgreSQL TCP** URL. Its format is `postgres://USER:PASSWORD@pooled.db.prisma.io:5432/postgres?sslmode=require`. Set it as **`DATABASE_URL`** in Vercel's Production environment. The app does not read `POSTGRES_URL` or `PRISMA_DATABASE_URL`, and the `pg` adapter cannot use a `prisma://` or `prisma+postgres://` Accelerate URL. Do not try to convert an Accelerate API key into a PostgreSQL password.
+2. This revision accepts the provider's `sslmode=require` and explicitly upgrades it to `verify-full` before creating the runtime pool. Earlier revisions rejected it before attempting a connection. Deploy the updated revision after changing environment variables.
+3. In a protected operator terminal with the **same runtime URL** injected as `DATABASE_URL`, run:
+
+   ```powershell
+   npm run db:generate
+   npm run db:check:prisma
+   ```
+
+   This command uses the application's pool configuration and Prisma adapter, performs a read-only transaction, checks catalogue/auth table access, and reports category/product counts without printing credentials or user records. It works with managed-provider credentials and does not require local `POSTGRES_DB`/`POSTGRES_USER` settings. Unlike `db:check:remote`, it does not enforce the separate-role deployment policy. A failure reports a safe error code for the runtime logs.
+4. If the product count is zero, use the **direct owner connection for that same database** in a separate terminal and run `npm run db:seed` once. Creating tables and running migrations do not seed products. Do not reseed a populated catalogue to diagnose connectivity: seeding restores fixture prices and stock.
+5. Set `BETTER_AUTH_URL` to the stable Production origin, such as `https://YOUR-PROJECT.vercel.app`, and open the app at that exact origin. In the Production GitHub OAuth App set its homepage to that origin and its authorization callback to `https://YOUR-PROJECT.vercel.app/api/auth/callback/github`. A per-deployment Vercel URL is a different origin and is not in this app's trusted origins. Confirm the matching `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, and a stable `BETTER_AUTH_SECRET` of at least 32 characters are also set in Production, then redeploy.
+6. Check `/api/products?sort=name`: `200` with `[]` means an empty catalogue; `500` means the data read failed. Then check `/api/products` to exercise the older ICU name sort too. A redirect to Vercel SSO is deployment protection, so use the intended Production domain and review its access settings before diagnosing an app response.
+
+Prisma's [connection guide](https://www.prisma.io/docs/postgres/database/connecting-to-your-database) documents pooled versus direct TCP URLs. Better Auth's [options reference](https://better-auth.com/docs/reference/options) documents `baseURL` and trusted origins.
 
 Use the selected deployment's build log for install/generate/compile problems and Vercel runtime logs for requests. Application logs contain a controlled operation name, an error category and a recognized driver/Prisma code. They exclude raw errors, query values, connection URLs, cookies and OAuth tokens. Client errors remain generic.
 

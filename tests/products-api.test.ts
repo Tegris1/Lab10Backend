@@ -47,18 +47,13 @@ describe("GET /api/products", () => {
     expect(listProducts).not.toHaveBeenCalled();
   });
 
-  it("returns a safe JSON 500 and logs repository failures", async () => {
-    const failure = new Error("Secret path: /private/products.json");
+  it("rethrows the original repository failure for framework runtime logging", async () => {
+    const failure = new Error("Database connection failed", { cause: new Error("Connection timed out") });
     listProducts.mockRejectedValue(failure);
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
-    const response = await GET(request());
-    expect(response.status).toBe(500);
-    const body = await response.text();
-    expect(JSON.parse(body)).toEqual({ error: expect.any(String) });
-    expect(body).not.toContain(failure.message);
+    await expect(GET(request())).rejects.toBe(failure);
     expect(log).toHaveBeenCalledExactlyOnceWith(JSON.stringify({
       operation: "products.list", type: "Error", code: "UNCLASSIFIED",
     }));
-    expect(JSON.stringify(log.mock.calls)).not.toContain(failure.message);
   });
 });

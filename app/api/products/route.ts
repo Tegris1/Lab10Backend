@@ -83,9 +83,7 @@ export async function GET(request: Request) {
     return Response.json(products, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     logServerError("products.list", error);
-    return Response.json(
-      { error: "Nie udało się wczytać produktów. Spróbuj ponownie później." },
-      { status: 500 },
-    );
+    // Let Next.js report the original failure in the function's runtime logs.
+    throw error;
   }
 }

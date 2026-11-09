@@ -144,7 +144,7 @@ Both features use `lib/db/prisma.ts`. Successful table creation proves the migra
 
 Prisma's [connection guide](https://www.prisma.io/docs/postgres/database/connecting-to-your-database) documents pooled versus direct TCP URLs. Better Auth's [options reference](https://better-auth.com/docs/reference/options) documents `baseURL` and trusted origins.
 
-Use the selected deployment's build log for install/generate/compile problems and Vercel runtime logs for requests. Application logs contain a controlled operation name, an error category and a recognized driver/Prisma code. They exclude raw errors, query values, connection URLs, cookies and OAuth tokens. Client errors remain generic.
+Use the selected deployment's build log for install/generate/compile problems and Vercel runtime logs for requests. Structured application logs contain a controlled operation name, an error category and a recognized driver/Prisma code. Database reads and the products API also rethrow the original error so Next.js/Vercel can log its message, stack and underlying cause. Failed products API requests now use the framework's HTTP 500 response instead of the previous JSON error body. Review runtime errors for sensitive details before sharing logs.
 
 Examples: `database.pool`, `products.list`, `basket.mutate`, `order.checkout`, `auth.sign-out`, `auth.library`. For `ECONNREFUSED`/`ETIMEDOUT`, check provider readiness, endpoint, TLS, region and connection limits. For `PrismaClientValidationError`, verify schema/client generation and the deployed SHA before considering a database change.
 

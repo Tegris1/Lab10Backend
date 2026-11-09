@@ -5,7 +5,7 @@ export async function databaseRead<T>(operation: string, read: () => Promise<T>)
   try { return await read(); }
   catch (error) {
     logServerError(operation, error);
-    // Next.js may log an uncaught server-rendering error; do not pass driver errors into that path.
-    throw new Error("Could not load the requested data. Please try again.");
+    // Preserve the driver's message, stack and cause for Next.js/Vercel runtime logs.
+    throw error;
   }
 }

@@ -46,23 +46,24 @@ Implementation: `npm run test:e2e:cart`, backed by `scripts/run-cart-e2e.mjs` an
 | Add/update/remove without a session or with a forged cookie | All six replays refused; baskets/items/stock unchanged | Pending workflow run |
 | Detect authorization regression | Temporary local compiled-artifact mutation failed the expected assertion; original artifact restored | Local controlled experiment only |
 | Cleanup after success and failure | Test server/browser stopped and only the generated database removed | Pending workflow run |
-| Supporting checks | 157 unit tests, 43 integration tests, lint and production build passed | Pending workflow run |
+| Supporting checks | 178 unit tests, 43 integration tests, lint and production build passed | Pending workflow run |
 
 Local evidence: `.tools/cart-e2e/result.json`, desktop/mobile screenshots and the separately retained controlled-regression report. These ignored files are local verification artifacts; they do not establish Production acceptance. See `DEPLOYMENT.md` for setup, test scope and maintenance cost.
 
 ## Lab 10 extension: automatic CI/CD
 
-Implementation: `verify` → `deploy` in `.github/workflows/ci.yml`. Production publication runs only after successful verification of a `main` push. Manual dispatches are secret-free publication-gate rehearsals and never migrate or deploy. Git-triggered Vercel publishing stays disabled.
+Implementation: `check` -> `deploy` in `.github/workflows/ci.yml`, using the supplied direct Vercel deployment reference. Main pushes and successful manual runs on `main` publish only after all checks pass. Pull requests and `lab10` runs verify only. Git-triggered Vercel publishing stays disabled. Production migrations and initial seeding are separate operator steps.
 
-| Check | Local evidence | Hosted acceptance |
-| --- | --- | --- |
-| Release origin/direct connection preflight, deployment SHA/project/readiness and catalogue smoke checks | Automated unit tests passed | Pending Production configuration and release |
-| Workflow validity | `actionlint` and TypeScript passed | Pending GitHub run |
-| Deliberate failed-test fixture | `npm run test:ci-gate:failure` exits 1 as intended | Record manual `fail_test: true` run with `deploy` skipped |
-| Positive gate rehearsal | Fixture excluded from the passing normal suite | Record manual `fail_test: false` run with a successful rehearsal job |
-| Production unchanged during both rehearsals | No remote publication performed locally | Record active deployment IDs before/after |
-| Actual verified-SHA release | CLI flags checked without authentication | Record successful main-push run, deployment ID/SHA, stable URL and smoke result |
+| Check | Evidence to record |
+| --- | --- |
+| Verify source before publishing | Successful lint, unit/integration tests, build and basket E2E in the updated workflow |
+| Deliberate failure blocks deployment | Manual `fail_test: true` run: `check` failed, `deploy` skipped, active Vercel deployment ID unchanged |
+| Successful manual publication | Manual `fail_test: false` run on `main`: new Vercel deployment ID, source SHA and URL |
+| Automatic publication | Successful `main` push: deployment URL and verified SHA in the summary or `release-<SHA>` artifact |
+| Production application acceptance | Catalogue, OAuth, basket persistence and account isolation checked on the stable domain |
 
-Setup and precise rehearsal instructions are in `DEPLOYMENT.md`. Production acceptance is still pending; the workflow files alone are not evidence of a successful release or skipped hosted publication.
+Only `VERCEL_TOKEN`, `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID` are required in the GitHub `production` Environment. Runtime database/auth settings remain in Vercel Production. The simplified workflow no longer invokes the optional release preflight or smoke-verification tools.
 
-Remaining Lab 10 extensions: a separately deployed test environment, backup/restore demonstration, and performance measurements. The temporary CI database and secret-free gate rehearsal are test isolation, not a deployed staging environment.
+Local validation of this workflow revision passed: actionlint, lint, 178 unit tests, 43 integration tests, production build and basket browser E2E. The deliberate failure fixture exited with code 1 as expected. Hosted acceptance of this workflow revision is pending. Existing runs of the previous rehearsal workflow do not demonstrate its new publication behavior. Successful manual runs on `main` now publish a real deployment.
+
+Remaining Lab 10 extensions: a separately deployed test environment, backup/restore demonstration, and performance measurements. The temporary CI database provides test isolation, not a deployed staging environment.

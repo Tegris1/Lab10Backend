@@ -15,10 +15,10 @@ This runbook covers the basic deployment requirements in sections 1–9 and the 
 | Application region | `fra1` (Frankfurt) in `vercel.json`; change it if the selected database is elsewhere |
 | Database | PostgreSQL **17**, remote provider and nearby region still to be selected/recorded |
 | Preview | Disabled; no Production secrets are assigned to Preview or pull-request code |
-| Release method | GitHub Actions publishes the verified `main` push SHA after all checks pass |
+| Release method | GitHub Actions publishes the verified `main` SHA after checks pass on pushes and manual runs |
 | Stable HTTPS address | Pending Vercel setup; record the actual value in `ACCEPTANCE.md` |
 
-The project retains Next.js 16.3.8 and Prisma/client/adapter 7.10.1. `package-lock.json` pins application installations. `@vercel/functions` 3.10.6 manages idle connections on Vercel. The release job installs Vercel CLI 65.14.0 explicitly.
+The project retains Next.js 16.3.8 and Prisma/client/adapter 7.10.1. `package-lock.json` pins application installations. `@vercel/functions` 3.10.6 manages idle connections on Vercel. The release job invokes Vercel CLI 65.3.1 explicitly, matching the supplied reference.
 
 Vercel Hobby does not deploy private GitHub organization repositories. If that affects the course repository, use an allowed private personal repository preserving its history and keep the course repository/PR as required by the lecturer. Do not make course material public to bypass this restriction.
 
@@ -105,6 +105,7 @@ To repeat the checks in a clean checkout, use local `.env` values and a separate
 ```powershell
 npm ci --include=dev
 npm run ci:check
+npm run test:e2e:cart
 ```
 
 CI results must be obtained before declaring a release accepted. The new standalone basket browser test is part of this CI job. The older combined `test:browser` command still includes legacy demo-history scenarios and is not used as this extension's acceptance test.
@@ -136,52 +137,48 @@ Coverage: adding from catalogue/details, changing quantities and totals, removin
 
 Results are written to `.tools/cart-e2e/result.json`, with desktop/mobile screenshots on success and `failure.png` when a browser scenario fails. CI uploads only this directory as `cart-e2e-<SHA>` for seven days, even when the test fails. It does not upload captured requests, session cookies or database URLs. A nonzero exit code fails the CI job. Maintenance cost: browser execution time in CI, artifact storage, and updates to selectors/session helpers when UI or Better Auth changes.
 
-Local acceptance: the full basket test passed against disposable PostgreSQL 17 and headless Edge. A controlled local mutation temporarily bypassed `requireSession` in the compiled `.next` artifact; the test failed with `Adding without a session must not create a basket item`. The original artifact was restored. Source application authentication and Production were not changed. Local lint, 157 unit tests, 43 integration tests and the production build also passed. GitHub-hosted execution remains to be confirmed after pushing the changes.
+Local acceptance: the full basket test passed against disposable PostgreSQL 17 and headless Edge. A controlled local mutation temporarily bypassed `requireSession` in the compiled `.next` artifact; the test failed with `Adding without a session must not create a basket item`. The original artifact was restored. Source application authentication and Production were not changed. Local lint, 178 unit tests, 43 integration tests and the production build also passed. GitHub-hosted execution remains to be confirmed after pushing the changes.
 
 CI preflight checks (`deploy:check` and `release:check`) do not enforce the custom 32-character auth-secret minimum when `CI=true`. Missing or malformed secrets are still rejected. The application runtime retains its existing minimum, including when started in CI; a short Production secret can still fail application initialization during the build or at runtime.
 
 ## Automatic CI/CD: configure once
 
-In GitHub, create an Environment named **`production`**, restricted to `main`. Add these **Environment secrets** there, rather than giving PR verification access to them:
+The workflow follows the supplied check-then-deploy reference. GitHub checks the source using a disposable PostgreSQL service; after successful checks, Vercel builds and deploys that same source using the existing project's Production configuration.
+
+In GitHub, create an Environment named **`production`**, restricted to `main`, and add these **Environment secrets**:
 
 | Secret | Value |
 | --- | --- |
 | `VERCEL_TOKEN` | Vercel access token authorized to deploy the existing project |
-| `VERCEL_ORG_ID` | Team/account ID from the existing Vercel project's `.vercel/project.json` (`orgId`) |
+| `VERCEL_ORG_ID` | Team/account ID from `.vercel/project.json` (`orgId`) |
 | `VERCEL_PROJECT_ID` | Existing Vercel project ID (`projectId`) |
-| `MIGRATION_DATABASE_URL` | Direct owner/migration-role PostgreSQL URL for the same database used by the app; Prisma Postgres uses `db.prisma.io`, not `pooled.db.prisma.io` |
-| `VERCEL_AUTOMATION_BYPASS_SECRET` | Optional: Vercel automation bypass secret if the Production domain has deployment protection |
 
-Add the **Environment variable** `PRODUCTION_URL` to the same GitHub Environment: the stable HTTPS origin, e.g. `https://YOUR-PROJECT.vercel.app`, without a path. It must match Vercel Production's `BETTER_AUTH_URL`. Obtain the Vercel IDs by linking an existing project with `vercel link`; never commit `.vercel` or its downloaded environment files.
+These are the only GitHub settings required by the deploy job. `PRODUCTION_URL`, `MIGRATION_DATABASE_URL` and an automation bypass secret are not read by this workflow. The optional standalone `release:check` and `release:verify` tools remain available, with their own configuration requirements, but are not automatic deployment gates.
 
-Keep runtime `DATABASE_URL`, `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, and GitHub OAuth credentials in Vercel's Production environment. `vercel pull --environment=production` downloads them into the disposable release runner for the Production build. The migration credential is supplied separately only to preflight validation and the migration step; it is not configured as an application runtime variable or passed to the build.
+Keep `DATABASE_URL`, `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, and GitHub OAuth credentials in **Vercel Production**. Vercel uses those variables for its remote build and running application. CI uses fictional credentials for its separate local PostgreSQL service. The existing application validation still applies to Production configuration.
 
-Keep `git.deploymentEnabled: false` in `vercel.json`. The GitHub integration must not independently publish a push before Actions tests finish. Manual dashboard publishing bypasses this gate and is reserved for reviewed recovery procedures. The workflow does not create a second hosted application or enable Preview; a hosted staging environment is a separate extension.
+Keep `git.deploymentEnabled: false` in `vercel.json` so Vercel's Git integration cannot publish independently before Actions checks pass. The authenticated CLI deployment is the publication path. The workflow does not enable Preview or create a second hosted application.
 
 ## Publish a specific revision
 
-1. Push reviewed changes to `lab10` and open the PR to `main` when authorized. PR and branch checks use only fictional credentials and local, disposable PostgreSQL 17 databases.
-2. Merge to `main`. The resulting **push SHA** runs schema validation, lint, unit/integration checks, the production-mode test build and basket browser E2E. The `deploy` job declares `needs: verify`; failures and cancellations skip it. Its branch/event condition permits only `main` pushes and the nonpublishing manual rehearsal described below.
-3. On a successful `main` push, `deploy` checks out exactly that SHA, checks the checkout identity, installs locked dependencies and the pinned CLI, then pulls the existing Vercel Production configuration. `release:check` validates HTTPS, OAuth origin, runtime pool settings and the direct migration connection before any database change. For Prisma Postgres it also checks the direct/pooled credential pair, since a shared hostname and database name do not identify the database on their own.
-4. `vercel build --prod` builds with the actual Production configuration. A build failure stops before migrations. Then `prisma migrate deploy` applies saved migrations using the direct credential as a separate step. Migration failure prevents publication. New migrations must preserve old-code compatibility and include any required privileges; the pipeline does not infer provider roles or perform migration recovery.
-5. `vercel deploy --prebuilt --prod` publishes that build with `githubCommitSha` metadata. Initial catalogue seeding remains a separate operator action; it never runs during ordinary releases.
-6. `release:verify` looks up the deployment through Vercel's API and checks project, URL, Production target, readiness and SHA. It then checks the stable domain's `/api/products?sort=name` and rendered `/product-list`, with retries for provider wake-up. The catalogue must contain products. Optional deployment-protection bypass travels only in a request header; this does not bypass application OAuth.
-7. Review the GitHub job summary and `release-<SHA>` artifact: public deployment URL, deployment ID, verified SHA and smoke result. The artifact retains only `.tools/release/` for 14 days; downloaded Vercel environment files, tokens and full API responses are excluded.
-
-Main runs are serialized and are not canceled by a newer push, preventing interruption of an active migration/publication. Non-main checks can still cancel older checks. A post-publication smoke failure makes the job fail **after the deployment is already live**; it does not automatically roll back code or database changes. Use the rollback procedure below and inspect runtime logs.
+1. Apply any pending, reviewed Production migrations separately with the direct migration/owner connection, following the remote database procedure above. Stop the release if migration fails. The workflow never migrates or seeds Production; initial catalogue seeding remains a separate one-time operator action. Plan schema changes for compatibility with the currently running application.
+2. Push changes to `lab10` and open the PR to `main`. PR and branch checks use only fictional credentials and temporary local PostgreSQL 17 databases.
+3. A `main` push runs schema validation, Prisma generation, lint, unit/integration tests, the production-mode test build and basket browser E2E. `deploy` declares `needs: check`, so failed or canceled checks prevent publication.
+4. The deploy job uses the `production` Environment, checks out `${{ github.sha }}`, and invokes `npx --yes vercel@65.3.1 deploy --prod --yes` with commit metadata. Vercel installs dependencies and executes `npm run build` using its Production variables. No prebuilt artifact or downloaded Production environment file is needed on the GitHub runner.
+5. Successful manual runs on **`main` publish a real Production deployment too**. Manual runs on `lab10` verify only. Production deployments are serialized with `cancel-in-progress: false`.
+6. Record the deployment URL and commit SHA from the job summary or `release-<SHA>` artifact, retained for 14 days. Inspect the Vercel deployment's commit metadata and complete the stable-domain acceptance checks. A successful CLI deployment alone does not establish catalogue, OAuth or basket acceptance.
 
 ## Demonstrate that a failed test blocks publication
 
-Use GitHub Actions → **Lab 10 CI/CD → Run workflow**, selecting `main`. Every manual run is a **rehearsal only**: it never fetches Production secrets, migrates or publishes, even when tests pass. Its dependent job uses the secret-free GitHub Environment `release-rehearsal`.
+Use GitHub Actions -> **Lab 10 CI/CD -> Run workflow**, selecting `main`.
 
-1. Record the currently active Production deployment ID.
-2. Run with **`fail_test: true`**. The dedicated `test:ci-gate:failure` fixture deliberately fails an actual Vitest assertion. It is excluded from normal unit/integration suites. `verify` fails and the dependent `deploy` job must be skipped.
-3. Run again with **`fail_test: false`**. The normal checks and basket E2E run; after success, the same dependent job opens the gate and records the verified SHA, then stops without publishing because the event is a manual rehearsal.
-4. Record both run links/results and confirm Production's deployment ID stayed unchanged. Successful `main` pushes use this same `needs` gate for real publication. No intentionally broken commit or separate hosted staging application is required for this demonstration.
+1. Record the currently active Vercel deployment ID.
+2. Enable **`fail_test`** and run the workflow. The dedicated `test:ci-gate:failure` fixture deliberately fails a Vitest assertion. The `check` job fails, `deploy` is skipped, and the active Production deployment must remain unchanged.
+3. Run again with **`fail_test` disabled**. All normal checks and basket E2E must pass, then the deploy job publishes to Vercel. Record the new deployment ID, source SHA, public URL and both Actions run links.
 
-Local verification: the normal unit suite, release-configuration/identity/smoke tests, TypeScript and workflow lint passed; the deliberate fixture returned exit code 1 as expected. The pinned CLI's pull/build/deploy flags were checked without authentication. A local run does not prove that GitHub skipped a hosted job or that Vercel published successfully: complete the hosted rehearsal and release rows in `ACCEPTANCE.md` after setting the secrets and pushing the changes.
+Manual runs are no longer rehearsals. Do not expect a successful manual `main` run to leave Production unchanged. The deliberate failure fixture remains excluded from normal test suites.
 
-Maintenance cost: CI minutes (verification build plus a Production-configured build), pinned CLI/action updates, token rotation and short-lived artifact storage. The testing stages continue to use an ephemeral PostgreSQL service, independently of the deployed database.
+Local validation of this revision passed: actionlint, lint, 178 unit tests, 43 integration tests, the production build and basket browser E2E. The deliberate failure fixture returned exit code 1 as expected. Vercel CLI 65.3.1 deployment flags were checked through its help output without authentication or publication. Local checks cannot prove that a hosted deployment succeeded. Fill in `ACCEPTANCE.md` after running the updated workflow on GitHub. Maintenance cost: Actions minutes for verification, Vercel build/deployment usage, pinned CLI/action updates, token rotation and short-lived artifact storage.
 
 ## Diagnostics
 

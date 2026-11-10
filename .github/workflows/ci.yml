@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       fail_test:
-        description: 'Rehearsal only: run an intentionally failing test to prove publication is blocked'
+        description: 'Deliberately fail a test to demonstrate that deployment is blocked'
         required: false
         default: false
         type: boolean
@@ -16,15 +16,10 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: checks-${{ github.workflow }}-${{ github.ref }}
-  # A new main push must not interrupt an active migration/publication.
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
-
 jobs:
-  verify:
-    name: Lint, tests, production build and basket E2E
-    runs-on: ubuntu-24.04
+  check:
+    name: Lint, tests, build and basket E2E
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     services:
       postgres:
@@ -40,27 +35,26 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 12
-    # All values are fictional and scoped to this ephemeral PostgreSQL service.
-    # PR code never receives production secrets or a production database URL.
+    # These credentials belong only to the disposable CI PostgreSQL service.
     env:
       DATABASE_URL: postgresql://shop_lab08:ci-only-password@localhost:5432/shop_lab08_ci
       TEST_DATABASE_URL: postgresql://shop_lab08:ci-only-password@localhost:5432/shop_lab08_test
+      BETTER_AUTH_SECRET: ci-only-secret-not-used-outside-github-actions
       BETTER_AUTH_URL: http://localhost:3000
-      BETTER_AUTH_SECRET: ci-only-fictional-auth-secret-at-least-32-characters
-      GITHUB_CLIENT_ID: fictional-ci-client-id
-      GITHUB_CLIENT_SECRET: fictional-ci-client-secret
+      GITHUB_CLIENT_ID: ci-placeholder
+      GITHUB_CLIENT_SECRET: ci-placeholder
       NEXT_TELEMETRY_DISABLED: "1"
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@v4
         with:
-          node-version-file: .node-version
+          node-version: 24
           cache: npm
       - name: Install the locked dependencies
         run: npm ci --include=dev
-      - name: Exercise a failed test in the publication-gate rehearsal
+      - name: Demonstrate that a failed test blocks deployment
         if: github.event_name == 'workflow_dispatch' && inputs.fail_test
         run: npm run test:ci-gate:failure
       - name: Validate the Prisma schema
@@ -71,7 +65,7 @@ jobs:
         run: |
           browser_path="$(command -v google-chrome)"
           echo "BROWSER_PATH=$browser_path" >> "$GITHUB_ENV"
-      - name: Test the basket in a browser on an isolated database
+      - name: Test the basket on an isolated database
         id: cart_e2e
         run: npm run test:e2e:cart
       - name: Upload basket browser test results
@@ -83,95 +77,44 @@ jobs:
           include-hidden-files: true
           if-no-files-found: warn
           retention-days: 7
-      - name: Record the verified revision
-        if: success()
-        run: |
-          echo "Verified checkout: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
-          echo "Publication can proceed only after all checks, including basket E2E, pass." >> "$GITHUB_STEP_SUMMARY"
 
   deploy:
-    name: Production publication
-    needs: verify
+    name: Deploy to Vercel Production
+    needs: check
     if: >-
-      needs.verify.result == 'success' && github.ref == 'refs/heads/main' &&
+      github.ref == 'refs/heads/main' &&
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 25
-    environment:
-      name: ${{ github.event_name == 'push' && 'production' || 'release-rehearsal' }}
+    concurrency:
+      group: production
+      cancel-in-progress: false
+    environment: production
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
-      - name: Verify the checked-out revision
-        env:
-          EXPECTED_SHA: ${{ github.sha }}
-        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
-      - name: Record successful publication-gate rehearsal
-        if: github.event_name == 'workflow_dispatch'
-        env:
-          VERIFIED_SHA: ${{ github.sha }}
-        run: |
-          echo "Publication gate passed for SHA $VERIFIED_SHA." >> "$GITHUB_STEP_SUMMARY"
-          echo "Manual rehearsal only: no Production credentials, migrations or deployment were used." >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/setup-node@v7
-        if: github.event_name == 'push'
+      - uses: actions/setup-node@v4
         with:
-          node-version-file: .node-version
-          cache: npm
-      - name: Install release dependencies and pinned Vercel CLI
-        if: github.event_name == 'push'
-        run: |
-          npm ci --include=dev
-          npm install --global vercel@65.14.0 --no-audit --no-fund
-      - name: Pull the existing Vercel Production configuration
-        if: github.event_name == 'push'
+          node-version: 24
+      - name: Deploy the verified source to Vercel
+        id: publish
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          test -n "$VERCEL_TOKEN" && test -n "$VERCEL_ORG_ID" && test -n "$VERCEL_PROJECT_ID"
-          vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
-      - name: Validate release origin and direct migration connection
-        if: github.event_name == 'push'
-        env:
-          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
-          MIGRATION_DATABASE_URL: ${{ secrets.MIGRATION_DATABASE_URL }}
-        run: npm run release:check
-      - name: Build the verified revision with Production configuration
-        if: github.event_name == 'push'
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: vercel build --prod --token="$VERCEL_TOKEN"
-      - name: Apply saved migrations separately from the application build
-        if: github.event_name == 'push'
-        env:
-          DATABASE_URL: ${{ secrets.MIGRATION_DATABASE_URL }}
-        run: npm run db:migrate:deploy
-      - name: Publish the verified prebuilt revision
-        if: github.event_name == 'push'
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: |
+          : "${VERCEL_TOKEN:?Set VERCEL_TOKEN in the production environment secrets}"
+          : "${VERCEL_ORG_ID:?Set VERCEL_ORG_ID in the production environment secrets}"
+          : "${VERCEL_PROJECT_ID:?Set VERCEL_PROJECT_ID in the production environment secrets}"
           mkdir -p .tools/release
-          vercel deploy --prebuilt --prod --yes --meta githubCommitSha="$GITHUB_SHA" --token="$VERCEL_TOKEN" > .tools/release/deployment-url.txt
-      - name: Check deployment identity and the stable Production catalogue
-        if: github.event_name == 'push'
-        env:
-          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
-        run: npm run release:verify
-      - name: Upload the public release result
-        if: always() && github.event_name == 'push'
+          npx --yes vercel@65.3.1 deploy --prod --yes --meta githubCommitSha="$GITHUB_SHA" --token="$VERCEL_TOKEN" > .tools/release/deployment-url.txt
+          echo "Published verified commit: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          cat .tools/release/deployment-url.txt >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload the deployment URL
+        if: always() && steps.publish.outcome != 'skipped'
         uses: actions/upload-artifact@v4
         with:
           name: release-${{ github.sha }}

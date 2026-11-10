@@ -138,6 +138,8 @@ Results are written to `.tools/cart-e2e/result.json`, with desktop/mobile screen
 
 Local acceptance: the full basket test passed against disposable PostgreSQL 17 and headless Edge. A controlled local mutation temporarily bypassed `requireSession` in the compiled `.next` artifact; the test failed with `Adding without a session must not create a basket item`. The original artifact was restored. Source application authentication and Production were not changed. Local lint, 157 unit tests, 43 integration tests and the production build also passed. GitHub-hosted execution remains to be confirmed after pushing the changes.
 
+CI preflight checks (`deploy:check` and `release:check`) do not enforce the custom 32-character auth-secret minimum when `CI=true`. Missing or malformed secrets are still rejected. The application runtime retains its existing minimum, including when started in CI; a short Production secret can still fail application initialization during the build or at runtime.
+
 ## Automatic CI/CD: configure once
 
 In GitHub, create an Environment named **`production`**, restricted to `main`. Add these **Environment secrets** there, rather than giving PR verification access to them:

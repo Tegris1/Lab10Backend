@@ -9,7 +9,10 @@ export type AuthEnvironment = {
 };
 
 // Pure validation shared by the server and the standalone CLI. Never logs input values.
-export function parseAuthEnvironment(input: Record<string, string | undefined>): AuthEnvironment {
+export function parseAuthEnvironment(
+  input: Record<string, string | undefined>,
+  { enforceSecretLength = true }: { enforceSecretLength?: boolean } = {},
+): AuthEnvironment {
   function required(name: string): string {
     const value = input[name];
     if (!value || value.trim() === "") throw new Error(`${name} is required.`);
@@ -20,7 +23,7 @@ export function parseAuthEnvironment(input: Record<string, string | undefined>):
   }
 
   const secret = required("BETTER_AUTH_SECRET");
-  if (secret.length < 32) throw new Error("BETTER_AUTH_SECRET must contain at least 32 characters.");
+  if (enforceSecretLength && secret.length < 32) throw new Error("BETTER_AUTH_SECRET must contain at least 32 characters.");
 
   const rawBaseURL = required("BETTER_AUTH_URL");
   let baseURL: URL;

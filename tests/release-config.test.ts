@@ -17,6 +17,15 @@ describe("release configuration before database migrations", () => {
     expect(validateReleaseConfiguration(release, runtime)).toBe(runtime.BETTER_AUTH_URL);
   });
 
+  it("skips the auth secret length check only for CI preflight", () => {
+    const shortSecretRuntime = { ...runtime, BETTER_AUTH_SECRET: "short" };
+    expect(validateReleaseConfiguration({ ...release, CI: "true" }, shortSecretRuntime))
+      .toBe(runtime.BETTER_AUTH_URL);
+    expect(() => validateReleaseConfiguration(release, shortSecretRuntime)).toThrow("at least 32 characters");
+    expect(() => validateReleaseConfiguration({ ...release, CI: "true" }, { ...runtime, BETTER_AUTH_SECRET: "" }))
+      .toThrow("BETTER_AUTH_SECRET is required");
+  });
+
   it("blocks an OAuth origin mismatch before publication", () => {
     expect(() => validateReleaseConfiguration({ ...release, PRODUCTION_URL: "https://another.example.test" }, runtime))
       .toThrow("BETTER_AUTH_URL must match");

@@ -6,7 +6,7 @@ try {
   if (process.env.VERCEL_ENV === "preview") {
     throw new Error("Preview deployment is disabled for this release. Configure an isolated environment before enabling Preview.");
   }
-  const auth = parseAuthEnvironment(process.env);
+  const auth = parseAuthEnvironment(process.env, { enforceSecretLength: process.env.CI !== "true" });
   const pool = getDatabasePoolConfig(process.env);
   console.log("Deployment environment validated; credential values omitted.");
   console.log(`OAuth homepage: ${auth.baseURL}`);

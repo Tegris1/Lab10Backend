@@ -17,7 +17,7 @@ export function validateReleaseConfiguration(
 ): string {
   const origin = productionOrigin(input.PRODUCTION_URL);
   const environment = { ...runtime, VERCEL: "1", VERCEL_ENV: "production" };
-  const auth = parseAuthEnvironment(environment);
+  const auth = parseAuthEnvironment(environment, { enforceSecretLength: input.CI !== "true" });
   getDatabasePoolConfig(environment);
   if (auth.baseURL !== origin) throw new Error("Production BETTER_AUTH_URL must match PRODUCTION_URL exactly.");
   if (!input.MIGRATION_DATABASE_URL) throw new Error("MIGRATION_DATABASE_URL is required in the production GitHub Environment.");

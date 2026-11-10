@@ -22,6 +22,17 @@ describe("auth environment validation", () => {
     }
   });
 
+  it("allows CI preflight to skip only the secret length check", () => {
+    expect(parseAuthEnvironment({ ...fixture, BETTER_AUTH_SECRET: "short" }, { enforceSecretLength: false }).secret)
+      .toBe("short");
+    expect(() => parseAuthEnvironment({ ...fixture, CI: "true", BETTER_AUTH_SECRET: "short" }))
+      .toThrow("at least 32 characters");
+    for (const secret of ["", " ", " short "]) {
+      expect(() => parseAuthEnvironment({ ...fixture, BETTER_AUTH_SECRET: secret }, { enforceSecretLength: false }))
+        .toThrow("BETTER_AUTH_SECRET");
+    }
+  });
+
   it("rejects short secrets and leaves credentials out of validation errors", () => {
     expect(() => parseAuthEnvironment({ ...fixture, BETTER_AUTH_SECRET: "short" })).toThrow("at least 32 characters");
     for (const [key, value] of [

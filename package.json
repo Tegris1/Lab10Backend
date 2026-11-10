@@ -31,9 +31,13 @@
     "cart:show": "tsx scripts/show-cart.ts",
     "auth:check": "tsx scripts/check-auth-config.ts",
     "deploy:check": "tsx scripts/check-deployment.ts",
+    "release:check": "tsx scripts/check-release.ts",
+    "release:verify": "node scripts/verify-release.mjs",
+    "test:ci-gate:failure": "vitest run --config vitest.gate.config.mts",
     "db:verify-seed": "tsx scripts/verify-catalog-seed.ts",
     "db:set-stock": "tsx scripts/set-product-amount.ts",
     "test:browser": "node scripts/run-browser-checks.mjs",
+    "test:e2e:cart": "node scripts/run-cart-e2e.mjs",
     "test:failures": "node scripts/verify-failures.mjs",
     "test:persistence": "node scripts/verify-persistence.mjs"
   },

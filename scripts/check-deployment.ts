@@ -12,7 +12,7 @@ try {
   console.log(`OAuth homepage: ${auth.baseURL}`);
   console.log(`OAuth callback: ${auth.baseURL}/api/auth/callback/github`);
   console.log(`Database pool per process: max=${pool.max}, idle=${pool.idleTimeoutMillis}ms, connect=${pool.connectionTimeoutMillis}ms.`);
-  console.log("Build generates Prisma Client; migrations and catalogue seed remain separate operator steps.");
+  console.log("Build generates Prisma Client and never migrates or seeds. The release workflow applies migrations separately; initial catalogue seeding remains manual.");
 } catch (error) {
   console.error(error instanceof Error ? error.message : "Deployment environment validation failed.");
   process.exitCode = 1;

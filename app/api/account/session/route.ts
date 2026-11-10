@@ -12,8 +12,8 @@ export async function GET(request: Request) {
       user: session ? { id: session.user.id, name: session.user.name, email: session.user.email } : null,
     }, { headers: privateHeaders });
     for (const cookie of headers.getSetCookie()) response.headers.append("Set-Cookie", cookie);
-    return response;
+    return response;  
   } catch {
     return Response.json({ message: "Could not verify your session." }, { status: 503, headers: privateHeaders });
-  }
+  }//testststsdf
 }

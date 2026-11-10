@@ -90,7 +90,7 @@ jobs:
           echo "Publication can proceed only after all checks, including basket E2E, pass." >> "$GITHUB_STEP_SUMMARY"
 
   deploy:
-    name: Production publication (manual runs rehearse only)
+    name: Production publication
     needs: verify
     if: >-
       needs.verify.result == 'success' && github.ref == 'refs/heads/main' &&
